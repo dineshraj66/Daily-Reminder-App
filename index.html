@@ -8,9 +8,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Reminders">
-<link rel="manifest" href="/manifest.json">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
 <title>Reminder App</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
@@ -515,7 +515,7 @@ function scheduleNext(r) {
 
 function sendPush(r) {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
-  try { new Notification(`⏰ ${r.title}`, { body: r.note || r.category, icon: '/icon-192.png', tag: r.id }); } catch(e) {}
+  try { new Notification(`⏰ ${r.title}`, { body: r.note || r.category, icon: './icon-192.png', tag: r.id }); } catch(e) {}
 }
 
 function showAlert() {
