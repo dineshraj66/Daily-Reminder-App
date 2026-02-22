@@ -233,6 +233,12 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
     <span>›</span>
   </div>
 
+  <div id="notifTest" class="notif-banner hidden" onclick="testNotification()" style="background:rgba(91,219,189,0.1);border-color:rgba(91,219,189,0.3)">
+    <span>✅</span>
+    <span><b>Notifications enabled!</b> Tap here to test</span>
+    <span>🔔</span>
+  </div>
+
   <div class="section">
     <div class="section-header">
       <div class="section-title">Tasks</div>
@@ -493,7 +499,8 @@ function checkAlerts() {
     if (r.done || r.alerted) return;
     if (r.snoozedUntil && new Date(r.snoozedUntil) > now) return;
     const t = new Date(r.datetime).getTime();
-    if (t <= now && t > now - 60000) {
+    // Trigger if time has passed and within last 5 minutes (to catch missed alerts)
+    if (t <= now && t > now - 300000) {
       fbUpdate(r.id, { alerted: true });
       alertQueue.push(r);
       sendPush(r);
@@ -709,8 +716,36 @@ window.setFilter = (f, el) => {
 // ── Notifications ──
 window.requestNotifPermission = async () => {
   await Notification.requestPermission();
-  document.getElementById('notifBanner').classList.toggle('hidden',
-    !('Notification' in window) || Notification.permission !== 'default');
+  updateNotifBanner();
+};
+
+function updateNotifBanner() {
+  const banner = document.getElementById('notifBanner');
+  const testBanner = document.getElementById('notifTest');
+  if (!('Notification' in window)) {
+    banner.classList.add('hidden');
+    testBanner.classList.add('hidden');
+  } else if (Notification.permission === 'granted') {
+    banner.classList.add('hidden');
+    testBanner.classList.remove('hidden');
+  } else if (Notification.permission === 'default') {
+    banner.classList.remove('hidden');
+    testBanner.classList.add('hidden');
+  } else {
+    banner.classList.add('hidden');
+    testBanner.classList.add('hidden');
+  }
+}
+
+window.testNotification = () => {
+  if (Notification.permission === 'granted') {
+    new Notification('🔔 Test Alert', {
+      body: 'Notifications are working! You\'ll get alerts like this when reminders are due.',
+      icon: './icon-192.png',
+      vibrate: [200, 100, 200]
+    });
+    showToast('✅ Test notification sent!');
+  }
 };
 
 // ── Toast ──
@@ -739,11 +774,11 @@ document.getElementById('hDay').textContent=now0.getDate();
 document.getElementById('hWeekday').textContent=now0.toLocaleDateString('en-US',{weekday:'long',month:'short'});
 
 const nb=document.getElementById('notifBanner');
-if(!('Notification' in window)||Notification.permission!=='default') nb.classList.add('hidden');
-else nb.classList.remove('hidden');
+updateNotifBanner();
 
 setInterval(render,30000);
-setInterval(checkAlerts,10000);
+setInterval(checkAlerts,5000);
+checkAlerts(); // Check immediately on load
 
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){window.closeModal();document.getElementById('snoozeModal').classList.remove('open');}
