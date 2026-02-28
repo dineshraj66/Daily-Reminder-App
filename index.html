@@ -66,11 +66,6 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .stat-num.a1{color:var(--accent)}.stat-num.a2{color:var(--accent2)}.stat-num.a3{color:var(--accent3)}.stat-num.a4{color:var(--success)}
 .stat-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px}
 
-/* Notification banner */
-.notif-banner{margin:0 20px 12px;background:rgba(124,106,247,0.1);border:1px solid rgba(124,106,247,0.3);border-radius:var(--radius-sm);padding:10px 14px;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);cursor:pointer}
-.notif-banner b{color:var(--text)}
-.notif-banner.hidden{display:none}
-
 /* Section */
 .section{padding:0 20px}
 .section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
@@ -112,7 +107,6 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .icon-btn:hover{color:var(--text);border-color:var(--accent)}
 .icon-btn.done-btn{color:var(--success);border-color:rgba(74,222,128,0.3);background:rgba(74,222,128,0.05)}
 .icon-btn.del-btn:hover{color:var(--danger);border-color:var(--danger)}
-.icon-btn.snooze-btn:hover{color:#f5c842;border-color:#f5c842}
 
 .empty-state{text-align:center;padding:50px 20px;animation:fadeIn 0.4s ease}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
@@ -153,29 +147,6 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 
 .submit-btn{width:100%;padding:15px;background:var(--accent);border:none;border-radius:var(--radius-sm);color:white;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;cursor:pointer;margin-top:6px;box-shadow:0 4px 18px rgba(124,106,247,0.35);transition:opacity 0.2s,transform 0.15s}
 .submit-btn:active{opacity:0.85;transform:scale(0.99)}
-
-/* Alert Modal */
-.alert-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.88);backdrop-filter:blur(14px);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity 0.3s}
-.alert-overlay.open{opacity:1;pointer-events:all}
-.alert-box{background:var(--card);border:1px solid var(--accent);border-radius:24px;padding:30px 24px;text-align:center;max-width:340px;width:100%;box-shadow:0 0 60px rgba(124,106,247,0.25);transform:scale(0.85);transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1)}
-.alert-overlay.open .alert-box{transform:scale(1)}
-.alert-icon{font-size:50px;margin-bottom:14px;animation:ring 1s ease infinite}
-@keyframes ring{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg)}}
-.alert-title{font-family:'Syne',sans-serif;font-size:21px;font-weight:800;margin-bottom:7px}
-.alert-body{font-size:14px;color:var(--muted);margin-bottom:6px;line-height:1.5}
-.alert-time{font-family:'Syne',sans-serif;font-size:13px;color:var(--accent);margin-bottom:20px}
-.alert-btns{display:flex;gap:10px}
-.alert-snooze{flex:1;padding:13px;background:var(--surface);border:1px solid var(--border);border-radius:11px;color:var(--text);font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer}
-.alert-dismiss{flex:1;padding:13px;background:var(--accent);border:none;border-radius:11px;color:white;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer}
-
-/* Snooze picker */
-.snooze-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);z-index:400;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity 0.2s}
-.snooze-overlay.open{opacity:1;pointer-events:all}
-.snooze-box{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:24px;max-width:300px;width:100%}
-.snooze-title{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;margin-bottom:14px;text-align:center}
-.snooze-opts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.snooze-opt{padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;text-align:center;transition:all 0.15s}
-.snooze-opt:hover{border-color:var(--accent);color:var(--accent)}
 
 /* Toast */
 .toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--card);border:1px solid var(--border);border-radius:12px;padding:11px 18px;font-size:13px;font-weight:500;opacity:0;transition:all 0.3s;z-index:500;white-space:nowrap;box-shadow:var(--shadow)}
@@ -225,18 +196,6 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
     <div class="stat-chip" onclick="setFilter('overdue',document.querySelectorAll('.filter-tab')[3])">
       <div class="stat-num a2" id="statOverdue">–</div><div class="stat-label">Overdue</div>
     </div>
-  </div>
-
-  <div id="notifBanner" class="notif-banner hidden" onclick="requestNotifPermission()">
-    <span>🔔</span>
-    <span><b>Enable notifications</b> to get alerts when reminders are due</span>
-    <span>›</span>
-  </div>
-
-  <div id="notifTest" class="notif-banner hidden" onclick="testNotification()" style="background:rgba(91,219,189,0.1);border-color:rgba(91,219,189,0.3)">
-    <span>✅</span>
-    <span><b>Notifications enabled!</b> Tap here to test</span>
-    <span>🔔</span>
   </div>
 
   <div class="section">
@@ -312,35 +271,6 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
   </div>
 </div>
 
-<!-- Alert Modal -->
-<div class="alert-overlay" id="alertModal">
-  <div class="alert-box">
-    <div class="alert-icon">🔔</div>
-    <div class="alert-title" id="alertTitle"></div>
-    <div class="alert-body" id="alertBody"></div>
-    <div class="alert-time" id="alertTime"></div>
-    <div class="alert-btns">
-      <button class="alert-snooze" onclick="openSnooze()">💤 Snooze</button>
-      <button class="alert-dismiss" onclick="dismissAlert()">Got it!</button>
-    </div>
-  </div>
-</div>
-
-<!-- Snooze Picker -->
-<div class="snooze-overlay" id="snoozeModal">
-  <div class="snooze-box">
-    <div class="snooze-title">💤 Snooze for…</div>
-    <div class="snooze-opts">
-      <button class="snooze-opt" onclick="doSnooze(5)">5 minutes</button>
-      <button class="snooze-opt" onclick="doSnooze(15)">15 minutes</button>
-      <button class="snooze-opt" onclick="doSnooze(30)">30 minutes</button>
-      <button class="snooze-opt" onclick="doSnooze(60)">1 hour</button>
-      <button class="snooze-opt" onclick="doSnooze(120)">2 hours</button>
-      <button class="snooze-opt" onclick="doSnooze(1440)">Tomorrow</button>
-    </div>
-  </div>
-</div>
-
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
@@ -369,9 +299,6 @@ let filter = 'today';
 let editId = null;
 let selPriority = 'med';
 let selRecur = 'none';
-let alertQueue = [];
-let alertActive = false;
-let currentAlertId = null;
 let theme = localStorage.getItem('theme') || 'dark';
 
 // Apply saved theme
@@ -483,7 +410,6 @@ function render() {
       </div>
       <div class="card-actions">
         <button class="icon-btn ${r.done?'done-btn':''}" onclick="toggleDone('${r.id}')" title="${r.done?'Undo':'Done'}">${r.done?'↩':'✓'}</button>
-        <button class="icon-btn snooze-btn" onclick="quickSnooze('${r.id}')" title="Snooze 15m">💤</button>
         <button class="icon-btn" onclick="editR('${r.id}')" title="Edit">✎</button>
         <button class="icon-btn del-btn" onclick="delR('${r.id}')" title="Delete">✕</button>
       </div>
@@ -501,62 +427,24 @@ function checkAlerts() {
     const t = new Date(r.datetime).getTime();
     // Trigger if time has passed and within last 5 minutes (to catch missed alerts)
     if (t <= now && t > now - 300000) {
-      fbUpdate(r.id, { alerted: true });
-      alertQueue.push(r);
-      sendPush(r);
-      // Schedule next recurrence
-      if (r.recur && r.recur !== 'none') scheduleNext(r);
+      // Show toast notification
+      showToast(`🔔 Reminder: ${r.title}`);
+      
+      // Handle recurrence
+      if (r.recur && r.recur !== 'none') {
+        const dt = new Date(r.datetime);
+        if (r.recur === 'daily')   dt.setDate(dt.getDate() + 1);
+        if (r.recur === 'weekly')  dt.setDate(dt.getDate() + 7);
+        if (r.recur === 'monthly') dt.setMonth(dt.getMonth() + 1);
+        // Update the same reminder with new datetime and reset alerted
+        fbUpdate(r.id, { datetime: dt.toISOString(), alerted: false });
+      } else {
+        // Non-recurring: just mark as alerted
+        fbUpdate(r.id, { alerted: true });
+      }
     }
   });
-  if (alertQueue.length && !alertActive) showAlert();
 }
-
-function scheduleNext(r) {
-  const dt = new Date(r.datetime);
-  if (r.recur === 'daily')   dt.setDate(dt.getDate() + 1);
-  if (r.recur === 'weekly')  dt.setDate(dt.getDate() + 7);
-  if (r.recur === 'monthly') dt.setMonth(dt.getMonth() + 1);
-  const newId = Date.now().toString() + '_r';
-  fbSet(newId, { ...r, id: newId, datetime: dt.toISOString(), alerted: false, done: false, snoozedUntil: null, createdAt: Date.now() });
-}
-
-function sendPush(r) {
-  if (!('Notification' in window) || Notification.permission !== 'granted') return;
-  try { new Notification(`⏰ ${r.title}`, { body: r.note || r.category, icon: './icon-192.png', tag: r.id }); } catch(e) {}
-}
-
-function showAlert() {
-  if (!alertQueue.length) { alertActive = false; return; }
-  alertActive = true;
-  const r = alertQueue.shift();
-  currentAlertId = r.id;
-  document.getElementById('alertTitle').textContent = r.title;
-  document.getElementById('alertBody').textContent = r.note || (r.category + ' reminder');
-  document.getElementById('alertTime').textContent = ft(new Date(r.datetime)) + ' · ' + fd(new Date(r.datetime));
-  document.getElementById('alertModal').classList.add('open');
-  if (navigator.vibrate) navigator.vibrate([300,150,300]);
-}
-window.showAlert = showAlert;
-
-// ── Snooze ──
-window.openSnooze = () => {
-  document.getElementById('snoozeModal').classList.add('open');
-};
-window.doSnooze = async (mins) => {
-  if (!currentAlertId) return;
-  const until = new Date(Date.now() + mins * 60000).toISOString();
-  await fbUpdate(currentAlertId, { alerted: false, snoozedUntil: until });
-  document.getElementById('snoozeModal').classList.remove('open');
-  document.getElementById('alertModal').classList.remove('open');
-  alertActive = false;
-  showToast(`💤 Snoozed for ${mins < 60 ? mins+'m' : (mins/60)+'h'}`);
-  setTimeout(showAlert, 400);
-};
-window.quickSnooze = async (id) => {
-  const until = new Date(Date.now() + 15 * 60000).toISOString();
-  await fbUpdate(id, { alerted: false, snoozedUntil: until });
-  showToast('💤 Snoozed 15 minutes');
-};
 
 // ── CRUD ──
 window.saveReminder = async () => {
@@ -654,13 +542,6 @@ window.delR = async (id) => {
 };
 window.editR = (id) => openModal(id);
 
-window.dismissAlert = () => {
-  document.getElementById('alertModal').classList.remove('open');
-  alertActive = false;
-  currentAlertId = null;
-  setTimeout(showAlert, 400);
-};
-
 // ── Modal ──
 window.openModal = (id=null) => {
   editId = id;
@@ -713,41 +594,6 @@ window.setFilter = (f, el) => {
   render();
 };
 
-// ── Notifications ──
-window.requestNotifPermission = async () => {
-  await Notification.requestPermission();
-  updateNotifBanner();
-};
-
-function updateNotifBanner() {
-  const banner = document.getElementById('notifBanner');
-  const testBanner = document.getElementById('notifTest');
-  if (!('Notification' in window)) {
-    banner.classList.add('hidden');
-    testBanner.classList.add('hidden');
-  } else if (Notification.permission === 'granted') {
-    banner.classList.add('hidden');
-    testBanner.classList.remove('hidden');
-  } else if (Notification.permission === 'default') {
-    banner.classList.remove('hidden');
-    testBanner.classList.add('hidden');
-  } else {
-    banner.classList.add('hidden');
-    testBanner.classList.add('hidden');
-  }
-}
-
-window.testNotification = () => {
-  if (Notification.permission === 'granted') {
-    new Notification('🔔 Test Alert', {
-      body: 'Notifications are working! You\'ll get alerts like this when reminders are due.',
-      icon: './icon-192.png',
-      vibrate: [200, 100, 200]
-    });
-    showToast('✅ Test notification sent!');
-  }
-};
-
 // ── Toast ──
 function showToast(msg) {
   const t = document.getElementById('toast');
@@ -773,15 +619,12 @@ const now0=new Date();
 document.getElementById('hDay').textContent=now0.getDate();
 document.getElementById('hWeekday').textContent=now0.toLocaleDateString('en-US',{weekday:'long',month:'short'});
 
-const nb=document.getElementById('notifBanner');
-updateNotifBanner();
-
 setInterval(render,30000);
 setInterval(checkAlerts,5000);
 checkAlerts(); // Check immediately on load
 
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'){window.closeModal();document.getElementById('snoozeModal').classList.remove('open');}
+  if(e.key==='Escape') window.closeModal();
   if(e.key==='Enter'&&document.getElementById('addModal').classList.contains('open')&&document.activeElement?.tagName!=='SELECT') window.saveReminder();
 });
 </script>
