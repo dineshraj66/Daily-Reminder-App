@@ -530,10 +530,35 @@ function launchConfetti() {
 }
 
 window.toggleDone = async (id) => {
-  const done = !reminders[id]?.done;
-  await fbUpdate(id, { done, updatedAt: Date.now() });
-  if (done) { launchConfetti(); showToast('🎉 Great job! Task completed!'); }
-  else showToast('↩ Marked incomplete');
+  const r = reminders[id];
+  if (!r) return;
+  
+  const done = !r.done;
+  
+  // If marking as done AND it's a recurring task
+  if (done && r.recur && r.recur !== 'none') {
+    const dt = new Date(r.datetime);
+    if (r.recur === 'daily')   dt.setDate(dt.getDate() + 1);
+    if (r.recur === 'weekly')  dt.setDate(dt.getDate() + 7);
+    if (r.recur === 'monthly') dt.setMonth(dt.getMonth() + 1);
+    
+    // Reschedule the task for next occurrence and mark as pending
+    await fbUpdate(id, { 
+      datetime: dt.toISOString(), 
+      done: false, 
+      alerted: false,
+      updatedAt: Date.now() 
+    });
+    
+    launchConfetti(); 
+    const nextLabel = r.recur === 'daily' ? 'tomorrow' : r.recur === 'weekly' ? 'next week' : 'next month';
+    showToast(`🎉 Done! Rescheduled for ${nextLabel}`);
+  } else {
+    // Normal toggle
+    await fbUpdate(id, { done, updatedAt: Date.now() });
+    if (done) { launchConfetti(); showToast('🎉 Great job! Task completed!'); }
+    else showToast('↩ Marked incomplete');
+  }
 };
 window.delR = async (id) => {
   if (!confirm('Delete this reminder?')) return;
