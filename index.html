@@ -28,7 +28,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .sync-dot.error{background:var(--danger)}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
 
-.header{padding:20px 20px 14px}
+.header{padding:20px 20px 16px}
 .header-top{display:flex;justify-content:space-between;align-items:center;flex-wrap:nowrap;gap:8px}
 .header-left{flex:1;min-width:0}
 .app-label{font-family:'Syne',sans-serif;font-size:10px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:var(--accent);margin-bottom:3px;white-space:nowrap}
@@ -48,8 +48,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .type-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:4px}
 .type-count{font-size:12px;color:var(--muted);font-weight:500}
 
-.stats-bar{display:flex;gap:8px;padding:0 20px 16px;overflow-x:auto;scrollbar-width:none}
-.stats-bar::-webkit-scrollbar{display:none}
+.stats-bar{display:flex;gap:8px;padding:0 20px 16px;flex-wrap:wrap}
 .stat-chip{flex:0 0 auto;min-width:70px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;text-align:center;transition:background 0.3s,transform 0.15s;cursor:pointer}
 .stat-chip:active{transform:scale(0.96)}
 .stat-num{font-family:'Syne',sans-serif;font-size:20px;font-weight:800}
@@ -79,7 +78,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .p-low{background:var(--accent3);box-shadow:0 0 6px rgba(91,219,189,0.4)}
 
 .reminder-info{flex:1;min-width:0}
-.reminder-title{font-weight:500;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.reminder-title{font-weight:500;font-size:15px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .reminder-meta{display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap}
 .reminder-time{font-size:12px;color:var(--accent);font-family:'Syne',sans-serif;font-weight:600}
 .reminder-date-lbl{font-size:12px;color:var(--muted)}
@@ -134,6 +133,26 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 
 .toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--card);border:1px solid var(--border);border-radius:12px;padding:11px 18px;font-size:13px;font-weight:500;opacity:0;transition:all 0.3s;z-index:500;white-space:nowrap;box-shadow:var(--shadow)}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* Custom Recur Modal */
+.custom-recur-group{margin-top:12px;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm)}
+.custom-recur-title{font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.weekday-picker{display:flex;gap:6px;margin-bottom:12px}
+.weekday-btn{flex:1;padding:8px 4px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--muted);text-align:center;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s}
+.weekday-btn.selected{border-color:var(--accent);background:rgba(124,106,247,0.15);color:var(--accent)}
+.custom-option{padding:10px 12px;margin-bottom:8px;border-radius:8px;border:1px solid var(--border);background:var(--card);cursor:pointer;transition:all 0.2s;font-size:13px;display:flex;align-items:flex-start;gap:10px}
+.custom-option:hover{border-color:var(--accent);background:rgba(124,106,247,0.05)}
+.custom-option.selected{border-color:var(--accent);background:rgba(124,106,247,0.12);color:var(--accent)}
+.custom-option.selected .custom-radio{background:var(--accent);border-color:var(--accent)}
+.custom-option.selected .custom-radio::after{opacity:1}
+.custom-radio{width:18px;height:18px;min-width:18px;border-radius:50%;border:2px solid var(--border);background:var(--card);position:relative;transition:all 0.2s;margin-top:2px}
+.custom-radio::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:8px;height:8px;border-radius:50%;background:white;opacity:0;transition:opacity 0.2s}
+.custom-option-content{flex:1}
+.custom-option-title{font-weight:600;margin-bottom:4px}
+.custom-option-desc{font-size:11px;color:var(--muted);margin-top:2px}
+.custom-option input[type="number"]{width:60px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-size:13px;margin:0 4px}
+.custom-option select{padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-size:13px;margin:0 4px}
+
 </style>
 </head>
 <body>
@@ -160,15 +179,15 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
   </div>
 
   <div class="type-toggle">
-    <div class="type-box active" id="reminderBox" onclick="switchTo('reminder')">
-      <div class="type-icon">📅</div>
-      <div class="type-title">Reminders</div>
-      <div class="type-count" id="reminderCount">0 Pending</div>
-    </div>
-    <div class="type-box" id="taskBox" onclick="switchTo('task')">
+    <div class="type-box active" id="taskBox" onclick="switchTo('task')">
       <div class="type-icon">📋</div>
       <div class="type-title">Tasks</div>
       <div class="type-count" id="taskCount">0 Pending</div>
+    </div>
+    <div class="type-box" id="reminderBox" onclick="switchTo('reminder')">
+      <div class="type-icon">📅</div>
+      <div class="type-title">Reminders</div>
+      <div class="type-count" id="reminderCount">0 Pending</div>
     </div>
   </div>
 
@@ -176,7 +195,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 
   <div class="section">
     <div class="section-header">
-      <div class="section-title" id="sectionTitle">Reminders</div>
+      <div class="section-title" id="sectionTitle">Tasks</div>
       <div class="filter-tabs" id="filterTabs"></div>
     </div>
     <div class="reminders-list" id="reminderList">
@@ -234,6 +253,89 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
         <button class="recur-opt" id="rDaily"  onclick="setRecur('daily')">Daily</button>
         <button class="recur-opt" id="rWeekly" onclick="setRecur('weekly')">Weekly</button>
         <button class="recur-opt" id="rMonthly"onclick="setRecur('monthly')">Monthly</button>
+        <button class="recur-opt" id="rCustom" onclick="setRecur('custom')">Custom</button>
+      </div>
+      <div class="custom-recur-group" id="customRecurGroup" style="display:none">
+        <div class="custom-recur-title">Custom Pattern</div>
+        
+        <!-- Weekdays -->
+        <div class="custom-option" id="customWeekdays" onclick="selectCustomType('weekdays')">
+          <div class="custom-radio"></div>
+          <div class="custom-option-content">
+            <div class="custom-option-title">📅 Specific Weekdays</div>
+            <div class="weekday-picker" id="weekdayPicker">
+              <button class="weekday-btn" onclick="event.stopPropagation();toggleWeekday(1)">M</button>
+              <button class="weekday-btn" onclick="event.stopPropagation();toggleWeekday(2)">T</button>
+              <button class="weekday-btn" onclick="event.stopPropagation();toggleWeekday(3)">W</button>
+              <button class="weekday-btn" onclick="event.stopPropagation();toggleWeekday(4)">T</button>
+              <button class="weekday-btn" onclick="event.stopPropagation();toggleWeekday(5)">F</button>
+              <button class="weekday-btn" onclick="event.stopPropagation();toggleWeekday(6)">S</button>
+              <button class="weekday-btn" onclick="event.stopPropagation();toggleWeekday(0)">S</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Last day of month -->
+        <div class="custom-option" id="customLastDay" onclick="selectCustomType('lastday')">
+          <div class="custom-radio"></div>
+          <div class="custom-option-content">
+            <div class="custom-option-title">📆 Last Day of Every Month</div>
+            <div class="custom-option-desc">Repeats on the last day (28/29/30/31)</div>
+          </div>
+        </div>
+        
+        <!-- Specific date -->
+        <div class="custom-option" id="customDate" onclick="selectCustomType('monthdate')">
+          <div class="custom-radio"></div>
+          <div class="custom-option-content">
+            <div class="custom-option-title">🗓️ Specific Date Every Month</div>
+            <div style="font-size:12px;margin-top:4px">
+              Day <input type="number" id="monthDateInput" min="1" max="31" value="15" onclick="event.stopPropagation()"> of every month
+            </div>
+          </div>
+        </div>
+        
+        <!-- First weekday of month -->
+        <div class="custom-option" id="customFirstWeekday" onclick="selectCustomType('firstweekday')">
+          <div class="custom-radio"></div>
+          <div class="custom-option-content">
+            <div class="custom-option-title">📍 First Weekday of Month</div>
+            <div style="font-size:12px;margin-top:4px">
+              First 
+              <select id="firstWeekdaySelect" onclick="event.stopPropagation()">
+                <option value="1">Monday</option>
+                <option value="2">Tuesday</option>
+                <option value="3">Wednesday</option>
+                <option value="4">Thursday</option>
+                <option value="5">Friday</option>
+                <option value="6">Saturday</option>
+                <option value="0">Sunday</option>
+              </select>
+              of every month
+            </div>
+          </div>
+        </div>
+        
+        <!-- Last weekday of month -->
+        <div class="custom-option" id="customLastWeekday" onclick="selectCustomType('lastweekday')">
+          <div class="custom-radio"></div>
+          <div class="custom-option-content">
+            <div class="custom-option-title">📌 Last Weekday of Month</div>
+            <div style="font-size:12px;margin-top:4px">
+              Last 
+              <select id="lastWeekdaySelect" onclick="event.stopPropagation()">
+                <option value="1">Monday</option>
+                <option value="2">Tuesday</option>
+                <option value="3">Wednesday</option>
+                <option value="4">Thursday</option>
+                <option value="5">Friday</option>
+                <option value="6">Saturday</option>
+                <option value="0">Sunday</option>
+              </select>
+              of every month
+            </div>
+          </div>
+        </div>
       </div>
     </div>
     <button class="submit-btn" id="submitBtn" onclick="saveReminder()">Set Reminder</button>
@@ -262,10 +364,15 @@ const db = getDatabase(fbApp);
 
 let reminders = {};
 let filter = 'today';
-let currentType = 'reminder';
+let currentType = 'task'; // Default to task
 let editId = null;
 let selPriority = 'med';
 let selRecur = 'none';
+let customRecurType = 'weekdays'; // weekdays, lastday, monthdate, firstweekday, lastweekday
+let selectedWeekdays = []; // [0-6] where 0=Sunday
+let monthDate = 15;
+let firstWeekday = 1; // Monday
+let lastWeekday = 5; // Friday
 let theme = localStorage.getItem('theme') || 'dark';
 
 document.documentElement.setAttribute('data-theme', theme);
@@ -318,7 +425,7 @@ window.switchTo = (type) => {
 };
 
 // Initialize on load
-switchTo('reminder');
+switchTo('task');
 
 // ── Render ──
 function render() {
@@ -408,8 +515,21 @@ function render() {
       else cd = `<div class="countdown">⏱ in ${dur(ms)}</div>`;
     }
 
-    const recurLabel = (r.type || 'reminder') === 'reminder' && r.recur && r.recur !== 'none'
-      ? `<span class="recur-badge">🔁 ${r.recur}</span>` : '';
+    let recurLabel = '';
+    if ((r.type || 'reminder') === 'reminder' && r.recur && r.recur !== 'none') {
+      let recurText = r.recur;
+      if (r.recur === 'custom' && r.customRecur) {
+        const customLabels = {
+          weekdays: `Weekdays: ${r.customRecur.weekdays.map(d => ['Su','M','T','W','Th','F','Sa'][d]).join(',')}`,
+          lastday: 'Last day/month',
+          monthdate: `${r.customRecur.monthDate}th/month`,
+          firstweekday: 'First weekday',
+          lastweekday: 'Last weekday'
+        };
+        recurText = customLabels[r.customRecur.type] || 'custom';
+      }
+      recurLabel = `<span class="recur-badge">🔁 ${recurText}</span>`;
+    }
 
     const createdAt = r.createdAt || r.id;
     const ageMs = now - createdAt;
@@ -441,6 +561,80 @@ function render() {
 }
 window.render = render;
 
+// ── Calculate Next Custom Recurrence ──
+function getNextCustomRecurrence(datetime, customRecur) {
+  const dt = new Date(datetime);
+  
+  switch(customRecur.type) {
+    case 'weekdays': {
+      // Find next occurrence of selected weekdays
+      const sorted = customRecur.weekdays.slice().sort((a,b) => a-b);
+      let nextDt = new Date(dt);
+      nextDt.setDate(nextDt.getDate() + 1);
+      
+      // Search up to 7 days ahead
+      for (let i = 0; i < 7; i++) {
+        if (sorted.includes(nextDt.getDay())) {
+          return nextDt;
+        }
+        nextDt.setDate(nextDt.getDate() + 1);
+      }
+      return nextDt;
+    }
+    
+    case 'lastday': {
+      // Last day of next month
+      const nextMonth = new Date(dt);
+      nextMonth.setMonth(nextMonth.getMonth() + 1);
+      nextMonth.setMonth(nextMonth.getMonth() + 1);
+      nextMonth.setDate(0); // Last day of previous month (which is next month from original)
+      nextMonth.setHours(dt.getHours(), dt.getMinutes(), dt.getSeconds());
+      return nextMonth;
+    }
+    
+    case 'monthdate': {
+      // Specific date next month
+      const nextMonth = new Date(dt);
+      nextMonth.setMonth(nextMonth.getMonth() + 1);
+      nextMonth.setDate(Math.min(customRecur.monthDate, new Date(nextMonth.getFullYear(), nextMonth.getMonth() + 1, 0).getDate()));
+      nextMonth.setHours(dt.getHours(), dt.getMinutes(), dt.getSeconds());
+      return nextMonth;
+    }
+    
+    case 'firstweekday': {
+      // First specific weekday of next month
+      const nextMonth = new Date(dt);
+      nextMonth.setMonth(nextMonth.getMonth() + 1);
+      nextMonth.setDate(1);
+      
+      const targetDay = customRecur.firstWeekday;
+      while (nextMonth.getDay() !== targetDay) {
+        nextMonth.setDate(nextMonth.getDate() + 1);
+      }
+      nextMonth.setHours(dt.getHours(), dt.getMinutes(), dt.getSeconds());
+      return nextMonth;
+    }
+    
+    case 'lastweekday': {
+      // Last specific weekday of next month
+      const nextMonth = new Date(dt);
+      nextMonth.setMonth(nextMonth.getMonth() + 1);
+      nextMonth.setMonth(nextMonth.getMonth() + 1);
+      nextMonth.setDate(0); // Last day of the month
+      
+      const targetDay = customRecur.lastWeekday;
+      while (nextMonth.getDay() !== targetDay) {
+        nextMonth.setDate(nextMonth.getDate() - 1);
+      }
+      nextMonth.setHours(dt.getHours(), dt.getMinutes(), dt.getSeconds());
+      return nextMonth;
+    }
+    
+    default:
+      return new Date(dt);
+  }
+}
+
 // ── Alerts ──
 function checkAlerts() {
   const now = Date.now();
@@ -451,11 +645,19 @@ function checkAlerts() {
       showToast(`🔔 Reminder: ${r.title}`);
       
       if ((r.type || 'reminder') === 'reminder' && r.recur && r.recur !== 'none') {
-        const dt = new Date(r.datetime);
-        if (r.recur === 'daily')   dt.setDate(dt.getDate() + 1);
-        if (r.recur === 'weekly')  dt.setDate(dt.getDate() + 7);
-        if (r.recur === 'monthly') dt.setMonth(dt.getMonth() + 1);
-        fbUpdate(r.id, { datetime: dt.toISOString(), alerted: false });
+        let nextDt;
+        
+        if (r.recur === 'custom' && r.customRecur) {
+          nextDt = getNextCustomRecurrence(r.datetime, r.customRecur);
+        } else {
+          const dt = new Date(r.datetime);
+          if (r.recur === 'daily')   dt.setDate(dt.getDate() + 1);
+          if (r.recur === 'weekly')  dt.setDate(dt.getDate() + 7);
+          if (r.recur === 'monthly') dt.setMonth(dt.getMonth() + 1);
+          nextDt = dt;
+        }
+        
+        fbUpdate(r.id, { datetime: nextDt.toISOString(), alerted: false });
       } else {
         fbUpdate(r.id, { alerted: true });
       }
@@ -472,10 +674,28 @@ window.saveReminder = async () => {
   const cat   = document.getElementById('rCategory').value;
   if (!title) { document.getElementById('rTitle').focus(); return; }
   if (!date||!time) { showToast('⚠ Please pick a date and time'); return; }
+  
+  // Validate custom recurring
+  if (selRecur === 'custom') {
+    if (customRecurType === 'weekdays' && selectedWeekdays.length === 0) {
+      showToast('⚠ Please select at least one weekday');
+      return;
+    }
+  }
+  
   const id = editId || Date.now().toString();
+  const recurData = selRecur === 'custom' ? {
+    type: customRecurType,
+    weekdays: customRecurType === 'weekdays' ? selectedWeekdays : null,
+    monthDate: customRecurType === 'monthdate' ? monthDate : null,
+    firstWeekday: customRecurType === 'firstweekday' ? firstWeekday : null,
+    lastWeekday: customRecurType === 'lastweekday' ? lastWeekday : null
+  } : null;
+  
   await fbSet(id, {
     id, title, note, category: cat, priority: selPriority, 
     recur: currentType === 'reminder' ? selRecur : 'none',
+    customRecur: recurData,
     type: currentType,
     datetime: new Date(`${date}T${time}`).toISOString(),
     done: reminders[id]?.done || false,
@@ -554,20 +774,35 @@ window.toggleDone = async (id) => {
   const done = !r.done;
   
   if (done && (r.type || 'reminder') === 'reminder' && r.recur && r.recur !== 'none') {
-    const dt = new Date(r.datetime);
-    if (r.recur === 'daily')   dt.setDate(dt.getDate() + 1);
-    if (r.recur === 'weekly')  dt.setDate(dt.getDate() + 7);
-    if (r.recur === 'monthly') dt.setMonth(dt.getMonth() + 1);
+    let nextDt;
+    let nextLabel;
+    
+    if (r.recur === 'custom' && r.customRecur) {
+      nextDt = getNextCustomRecurrence(r.datetime, r.customRecur);
+      const customLabels = {
+        weekdays: 'next selected weekday',
+        lastday: 'last day of next month',
+        monthdate: `${r.customRecur.monthDate}th of next month`,
+        firstweekday: 'first occurrence next month',
+        lastweekday: 'last occurrence next month'
+      };
+      nextLabel = customLabels[r.customRecur.type] || 'next occurrence';
+    } else {
+      const dt = new Date(r.datetime);
+      if (r.recur === 'daily')   { dt.setDate(dt.getDate() + 1); nextLabel = 'tomorrow'; }
+      if (r.recur === 'weekly')  { dt.setDate(dt.getDate() + 7); nextLabel = 'next week'; }
+      if (r.recur === 'monthly') { dt.setMonth(dt.getMonth() + 1); nextLabel = 'next month'; }
+      nextDt = dt;
+    }
     
     await fbUpdate(id, { 
-      datetime: dt.toISOString(), 
+      datetime: nextDt.toISOString(), 
       done: false, 
       alerted: false,
       updatedAt: Date.now() 
     });
     
     launchConfetti(); 
-    const nextLabel = r.recur === 'daily' ? 'tomorrow' : r.recur === 'weekly' ? 'next week' : 'next month';
     showToast(`🎉 Done! Rescheduled for ${nextLabel}`);
   } else {
     await fbUpdate(id, { done, updatedAt: Date.now() });
@@ -596,8 +831,34 @@ window.openModal = (id=null) => {
   selPriority = r ? (r.priority||'med') : 'med';
   selRecur    = r ? (r.recur||'none')   : 'none';
   
+  // Load custom recur data
+  if (r && r.customRecur) {
+    customRecurType = r.customRecur.type || 'weekdays';
+    selectedWeekdays = r.customRecur.weekdays || [];
+    monthDate = r.customRecur.monthDate || 15;
+    firstWeekday = r.customRecur.firstWeekday || 1;
+    lastWeekday = r.customRecur.lastWeekday || 5;
+    document.getElementById('monthDateInput').value = monthDate;
+    document.getElementById('firstWeekdaySelect').value = firstWeekday;
+    document.getElementById('lastWeekdaySelect').value = lastWeekday;
+    updateWeekdayUI();
+    setTimeout(() => selectCustomType(customRecurType), 100);
+  } else {
+    // Reset to defaults
+    customRecurType = 'weekdays';
+    selectedWeekdays = [];
+    monthDate = 15;
+    firstWeekday = 1;
+    lastWeekday = 5;
+    document.getElementById('monthDateInput').value = 15;
+    document.getElementById('firstWeekdaySelect').value = 1;
+    document.getElementById('lastWeekdaySelect').value = 5;
+    updateWeekdayUI();
+  }
+  
   // Hide recurring for tasks
   document.getElementById('recurGroup').style.display = currentType === 'task' ? 'none' : 'block';
+  document.getElementById('customRecurGroup').style.display = selRecur === 'custom' ? 'block' : 'none';
   
   document.getElementById('modalTitle').textContent  = r ? (currentType === 'reminder' ? 'Edit Reminder' : 'Edit Task') : (currentType === 'reminder' ? 'New Reminder' : 'New Task');
   document.getElementById('submitBtn').textContent   = r ? 'Update' : (currentType === 'reminder' ? 'Set Reminder' : 'Add Task');
@@ -609,17 +870,72 @@ window.closeModal = () => { document.getElementById('addModal').classList.remove
 window.handleOverlayClick = (e) => { if(e.target===e.currentTarget) window.closeModal(); };
 
 window.setPriority = (p) => { selPriority=p; updatePUI(); };
-window.setRecur    = (r) => { selRecur=r;    updateRUI(); };
+window.setRecur    = (r) => { 
+  selRecur=r;    
+  const isCustom = r === 'custom';
+  document.getElementById('customRecurGroup').style.display = isCustom ? 'block' : 'none';
+  
+  // Auto-select first option (weekdays) when opening custom
+  if (isCustom && !document.querySelector('.custom-option.selected')) {
+    selectCustomType('weekdays');
+  }
+  
+  updateRUI(); 
+};
 
 function updatePUI() {
   document.getElementById('pHigh').className='priority-opt'+(selPriority==='high'?' sel-high':'');
   document.getElementById('pMed').className ='priority-opt'+(selPriority==='med' ?' sel-med' :'');
   document.getElementById('pLow').className ='priority-opt'+(selPriority==='low' ?' sel-low' :'');
 }
+window.selectCustomType = (type) => {
+  customRecurType = type;
+  document.querySelectorAll('.custom-option').forEach(el => el.classList.remove('selected'));
+  
+  // Map type to element ID
+  const idMap = {
+    weekdays: 'customWeekdays',
+    lastday: 'customLastDay',
+    monthdate: 'customDate',
+    firstweekday: 'customFirstWeekday',
+    lastweekday: 'customLastWeekday'
+  };
+  
+  const targetId = idMap[type];
+  if (targetId) {
+    document.getElementById(targetId).classList.add('selected');
+  }
+  
+  // Update values from inputs
+  if (type === 'monthdate') monthDate = parseInt(document.getElementById('monthDateInput').value) || 15;
+  if (type === 'firstweekday') firstWeekday = parseInt(document.getElementById('firstWeekdaySelect').value);
+  if (type === 'lastweekday') lastWeekday = parseInt(document.getElementById('lastWeekdaySelect').value);
+};
+
+window.toggleWeekday = (day) => {
+  const idx = selectedWeekdays.indexOf(day);
+  if (idx > -1) {
+    selectedWeekdays.splice(idx, 1);
+  } else {
+    selectedWeekdays.push(day);
+  }
+  updateWeekdayUI();
+  selectCustomType('weekdays');
+};
+
+function updateWeekdayUI() {
+  const btns = document.querySelectorAll('#weekdayPicker .weekday-btn');
+  const days = [1,2,3,4,5,6,0]; // M,T,W,T,F,S,S
+  btns.forEach((btn, i) => {
+    btn.classList.toggle('selected', selectedWeekdays.includes(days[i]));
+  });
+}
+
 function updateRUI() {
-  ['None','Daily','Weekly','Monthly'].forEach((l,i)=>{
-    const key=['none','daily','weekly','monthly'][i];
-    document.getElementById('r'+l).className='recur-opt'+(selRecur===key?' sel':'');
+  ['None','Daily','Weekly','Monthly','Custom'].forEach((l,i)=>{
+    const key=['none','daily','weekly','monthly','custom'][i];
+    const el = document.getElementById('r'+l);
+    if (el) el.className='recur-opt'+(selRecur===key?' sel':'');
   });
 }
 
