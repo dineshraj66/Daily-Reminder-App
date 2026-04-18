@@ -14,22 +14,13 @@
 <title>Reminder App</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-:root {
-  --bg:#0a0a14; --surface:#12121f; --card:#1a1a2e; --border:#2a2a45;
-  --accent:#7c6af7; --accent2:#f97b6b; --accent3:#5bdbbd;
-  --text:#e8e8f0; --muted:#7070a0; --danger:#ff5b6b; --success:#4ade80;
-  --radius:16px; --radius-sm:10px; --shadow:0 8px 32px rgba(0,0,0,0.4);
-}
-[data-theme="light"] {
-  --bg:#f0f0f8; --surface:#ffffff; --card:#f8f8ff; --border:#ddddf0;
-  --text:#1a1a2e; --muted:#8080a0; --shadow:0 8px 32px rgba(0,0,0,0.1);
-}
+:root{--bg:#0a0a14;--surface:#12121f;--card:#1a1a2e;--border:#2a2a45;--accent:#7c6af7;--accent2:#f97b6b;--accent3:#5bdbbd;--text:#e8e8f0;--muted:#7070a0;--danger:#ff5b6b;--success:#4ade80;--radius:16px;--radius-sm:10px;--shadow:0 8px 32px rgba(0,0,0,0.4)}
+[data-theme="light"]{--bg:#f0f0f8;--surface:#ffffff;--card:#f8f8ff;--border:#ddddf0;--text:#1a1a2e;--muted:#8080a0;--shadow:0 8px 32px rgba(0,0,0,0.1)}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;transition:background 0.3s,color 0.3s}
 body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(124,106,247,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(124,106,247,0.03) 1px,transparent 1px);background-size:32px 32px;pointer-events:none;z-index:0}
 #app{position:relative;z-index:1;max-width:480px;margin:0 auto;min-height:100vh;padding-bottom:120px}
 
-/* Sync bar */
 .sync-bar{display:flex;align-items:center;gap:8px;padding:8px 20px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--border);background:var(--surface);transition:background 0.3s}
 .sync-dot{width:7px;height:7px;border-radius:50%;background:var(--muted);flex-shrink:0;transition:background 0.3s}
 .sync-dot.connected{background:var(--success);box-shadow:0 0 6px rgba(74,222,128,0.5)}
@@ -37,7 +28,6 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .sync-dot.error{background:var(--danger)}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
 
-/* Header */
 .header{padding:20px 20px 14px}
 .header-top{display:flex;justify-content:space-between;align-items:center;flex-wrap:nowrap;gap:8px}
 .header-left{flex:1;min-width:0}
@@ -50,40 +40,38 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .header-day{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--accent);line-height:1;white-space:nowrap}
 .header-weekday{font-size:10px;color:var(--muted);margin-top:1px;white-space:nowrap}
 
-/* Search */
-.search-wrap{padding:0 20px 12px}
-.search-box{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;transition:border-color 0.2s}
-.search-box:focus-within{border-color:var(--accent)}
-.search-box span{color:var(--muted);font-size:15px}
-.search-box input{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px}
-.search-box input::placeholder{color:var(--muted)}
+.type-toggle{display:flex;gap:12px;padding:0 20px 16px;margin-top:-8px}
+.type-box{flex:1;background:var(--surface);border:2px solid var(--border);border-radius:var(--radius);padding:16px 14px;text-align:center;cursor:pointer;transition:all 0.25s;position:relative}
+.type-box:active{transform:scale(0.97)}
+.type-box.active{border-color:var(--accent);background:rgba(124,106,247,0.08);box-shadow:0 0 20px rgba(124,106,247,0.15)}
+.type-icon{font-size:32px;margin-bottom:6px}
+.type-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:4px}
+.type-count{font-size:12px;color:var(--muted);font-weight:500}
 
-/* Stats */
-.stats-bar{display:flex;gap:8px;padding:0 20px 16px}
-.stat-chip{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;text-align:center;transition:background 0.3s,transform 0.15s;cursor:pointer}
+.stats-bar{display:flex;gap:8px;padding:0 20px 16px;overflow-x:auto;scrollbar-width:none}
+.stats-bar::-webkit-scrollbar{display:none}
+.stat-chip{flex:0 0 auto;min-width:70px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;text-align:center;transition:background 0.3s,transform 0.15s;cursor:pointer}
 .stat-chip:active{transform:scale(0.96)}
 .stat-num{font-family:'Syne',sans-serif;font-size:20px;font-weight:800}
 .stat-num.a1{color:var(--accent)}.stat-num.a2{color:var(--accent2)}.stat-num.a3{color:var(--accent3)}.stat-num.a4{color:var(--success)}
 .stat-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px}
 
-/* Section */
 .section{padding:0 20px}
 .section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
 .section-title{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
-.filter-tabs{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;padding-bottom:2px}
+.filter-tabs{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
 .filter-tabs::-webkit-scrollbar{display:none}
 .filter-tab{font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all 0.2s;font-family:'DM Sans',sans-serif;white-space:nowrap;flex-shrink:0}
 .filter-tab.active{background:var(--accent);border-color:var(--accent);color:#fff}
 
 .reminders-list{display:flex;flex-direction:column;gap:9px}
-.reminder-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;display:flex;align-items:center;gap:12px;position:relative;overflow:hidden;transition:transform 0.15s,box-shadow 0.15s;animation:slideIn 0.3s ease}
+.reminder-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;display:flex;align-items:center;gap:12px;position:relative;overflow:hidden;transition:transform 0.15s;animation:slideIn 0.3s ease}
 @keyframes slideIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 .reminder-card:active{transform:scale(0.98)}
 .reminder-card.done{opacity:0.45}
 .reminder-card.done .reminder-title{text-decoration:line-through;color:var(--muted)}
 .reminder-card.overdue::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--danger)}
 .reminder-card.upcoming::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent3)}
-.reminder-card.snoozed::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:#f5c842}
 
 .priority-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
 .p-high{background:var(--accent2);box-shadow:0 0 8px rgba(249,123,107,0.5)}
@@ -100,7 +88,6 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .age-badge{font-size:10px;padding:2px 7px;border-radius:20px;background:rgba(91,219,189,0.12);border:1px solid rgba(91,219,189,0.25);color:var(--accent3)}
 .countdown{font-size:11px;color:var(--accent3);margin-top:3px}
 .countdown.overdue{color:var(--danger)}
-.countdown.snoozed-lbl{color:#f5c842}
 
 .card-actions{display:flex;gap:6px;flex-shrink:0}
 .icon-btn{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;transition:all 0.15s}
@@ -118,12 +105,10 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .spinner{width:34px;height:34px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 14px}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* FAB */
 .fab{position:fixed;bottom:28px;right:calc(50% - 240px + 20px);width:56px;height:56px;border-radius:17px;background:var(--accent);border:none;color:white;font-size:25px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 8px 28px rgba(124,106,247,0.45);transition:transform 0.2s;z-index:100}
 .fab:active{transform:scale(0.92)}
 @media(max-width:480px){.fab{right:20px}}
 
-/* Modal */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);z-index:200;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity 0.25s}
 .modal-overlay.open{opacity:1;pointer-events:all}
 .modal{background:var(--surface);border:1px solid var(--border);border-radius:24px 24px 0 0;padding:24px 20px 44px;width:100%;max-width:480px;margin:0 auto;transform:translateY(100%);transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);max-height:92vh;overflow-y:auto}
@@ -136,7 +121,6 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 [data-theme="light"] .form-input{color-scheme:light}
 .form-input:focus{border-color:var(--accent)}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.form-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
 
 .priority-picker,.recur-picker{display:flex;gap:8px}
 .priority-opt,.recur-opt{flex:1;padding:9px 6px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--card);color:var(--muted);text-align:center;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;font-family:'DM Sans',sans-serif}
@@ -148,7 +132,6 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .submit-btn{width:100%;padding:15px;background:var(--accent);border:none;border-radius:var(--radius-sm);color:white;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;cursor:pointer;margin-top:6px;box-shadow:0 4px 18px rgba(124,106,247,0.35);transition:opacity 0.2s,transform 0.15s}
 .submit-btn:active{opacity:0.85;transform:scale(0.99)}
 
-/* Toast */
 .toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--card);border:1px solid var(--border);border-radius:12px;padding:11px 18px;font-size:13px;font-weight:500;opacity:0;transition:all 0.3s;z-index:500;white-space:nowrap;box-shadow:var(--shadow)}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
@@ -176,43 +159,30 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
     </div>
   </div>
 
-  <div class="search-wrap">
-    <div class="search-box">
-      <span>🔍</span>
-      <input type="text" id="searchInput" placeholder="Search reminders…" oninput="render()">
+  <div class="type-toggle">
+    <div class="type-box active" id="reminderBox" onclick="switchTo('reminder')">
+      <div class="type-icon">📅</div>
+      <div class="type-title">Reminders</div>
+      <div class="type-count" id="reminderCount">0 Pending</div>
+    </div>
+    <div class="type-box" id="taskBox" onclick="switchTo('task')">
+      <div class="type-icon">📋</div>
+      <div class="type-title">Tasks</div>
+      <div class="type-count" id="taskCount">0 Pending</div>
     </div>
   </div>
 
-  <div class="stats-bar">
-    <div class="stat-chip" onclick="setFilter('all',document.querySelectorAll('.filter-tab')[0])">
-      <div class="stat-num a1" id="statTotal">–</div><div class="stat-label">Pending</div>
-    </div>
-    <div class="stat-chip" onclick="setFilter('today',document.querySelectorAll('.filter-tab')[1])">
-      <div class="stat-num a4" id="statToday">–</div><div class="stat-label">Today</div>
-    </div>
-    <div class="stat-chip" onclick="setFilter('upcoming',document.querySelectorAll('.filter-tab')[2])">
-      <div class="stat-num a3" id="statUpcoming">–</div><div class="stat-label">Upcoming</div>
-    </div>
-    <div class="stat-chip" onclick="setFilter('overdue',document.querySelectorAll('.filter-tab')[3])">
-      <div class="stat-num a2" id="statOverdue">–</div><div class="stat-label">Overdue</div>
-    </div>
-  </div>
+  <div class="stats-bar" id="statsBar"></div>
 
   <div class="section">
     <div class="section-header">
-      <div class="section-title">Tasks</div>
-      <div class="filter-tabs">
-        <button class="filter-tab" onclick="setFilter('all',this)">All</button>
-        <button class="filter-tab active" onclick="setFilter('today',this)">Today</button>
-        <button class="filter-tab" onclick="setFilter('upcoming',this)">Soon</button>
-        <button class="filter-tab" onclick="setFilter('overdue',this)">Overdue</button>
-        <button class="filter-tab" onclick="setFilter('done',this)">Done</button>
-      </div>
+      <div class="section-title" id="sectionTitle">Reminders</div>
+      <div class="filter-tabs" id="filterTabs"></div>
     </div>
     <div class="reminders-list" id="reminderList">
       <div class="loading-state">
         <div class="spinner"></div>
-        <div style="color:var(--muted);font-size:13px">Connecting to database…</div>
+        <div style="color:var(--muted);font-size:13px">Connecting…</div>
       </div>
     </div>
   </div>
@@ -220,7 +190,6 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 
 <button class="fab" onclick="openModal()">+</button>
 
-<!-- Add/Edit Modal -->
 <div class="modal-overlay" id="addModal" onclick="handleOverlayClick(event)">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -258,7 +227,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
         <button class="priority-opt" id="pLow"  onclick="setPriority('low')">🌿 Low</button>
       </div>
     </div>
-    <div class="form-group">
+    <div class="form-group" id="recurGroup">
       <label class="form-label">Recurring</label>
       <div class="recur-picker">
         <button class="recur-opt" id="rNone"   onclick="setRecur('none')">None</button>
@@ -271,10 +240,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
   </div>
 </div>
 
-<!-- Toast -->
 <div class="toast" id="toast"></div>
-
-<!-- Confetti Canvas -->
 <canvas id="confettiCanvas" style="position:fixed;inset:0;pointer-events:none;z-index:999;display:none"></canvas>
 
 <script type="module">
@@ -296,69 +262,134 @@ const db = getDatabase(fbApp);
 
 let reminders = {};
 let filter = 'today';
+let currentType = 'reminder';
 let editId = null;
 let selPriority = 'med';
 let selRecur = 'none';
 let theme = localStorage.getItem('theme') || 'dark';
 
-// Apply saved theme
 document.documentElement.setAttribute('data-theme', theme);
 document.getElementById('themeBtn').textContent = theme === 'dark' ? '🌙' : '☀️';
 
-// Connection
 onValue(ref(db, '.info/connected'), snap => {
   const ok = snap.val() === true;
   document.getElementById('syncDot').className = 'sync-dot ' + (ok ? 'connected' : 'error');
-  document.getElementById('syncStatus').textContent = ok ? 'Synced across all devices ✓' : 'Offline — reconnecting…';
+  document.getElementById('syncStatus').textContent = ok ? 'Synced ✓' : 'Offline…';
 });
 
-// Live data
 onValue(ref(db, 'reminders'), snap => {
   reminders = snap.val() || {};
   render();
   checkAlerts();
 });
 
-async function fbSet(id, data) {
-  document.getElementById('syncDot').className = 'sync-dot syncing';
-  await set(ref(db, `reminders/${id}`), data);
-}
+async function fbSet(id, data) { await set(ref(db, `reminders/${id}`), data); }
 async function fbUpdate(id, data) { await update(ref(db, `reminders/${id}`), data); }
 async function fbRemove(id) { await remove(ref(db, `reminders/${id}`)); }
+
+// ── Switch Type ──
+window.switchTo = (type) => {
+  currentType = type;
+  filter = 'today';
+  
+  document.getElementById('reminderBox').classList.toggle('active', type === 'reminder');
+  document.getElementById('taskBox').classList.toggle('active', type === 'task');
+  document.getElementById('sectionTitle').textContent = type === 'reminder' ? 'Reminders' : 'Tasks';
+  
+  const filterTabs = document.getElementById('filterTabs');
+  if (type === 'reminder') {
+    filterTabs.innerHTML = `
+      <button class="filter-tab" onclick="setFilter('pending',this)">Pending</button>
+      <button class="filter-tab active" onclick="setFilter('today',this)">Today</button>
+      <button class="filter-tab" onclick="setFilter('upcoming',this)">Soon</button>
+      <button class="filter-tab" onclick="setFilter('overdue',this)">Overdue</button>
+    `;
+  } else {
+    filterTabs.innerHTML = `
+      <button class="filter-tab" onclick="setFilter('all',this)">All</button>
+      <button class="filter-tab active" onclick="setFilter('today',this)">Today</button>
+      <button class="filter-tab" onclick="setFilter('upcoming',this)">Soon</button>
+      <button class="filter-tab" onclick="setFilter('overdue',this)">Overdue</button>
+      <button class="filter-tab" onclick="setFilter('done',this)">Done</button>
+    `;
+  }
+  
+  render();
+};
+
+// Initialize on load
+switchTo('reminder');
 
 // ── Render ──
 function render() {
   const now = Date.now();
-  const q = document.getElementById('searchInput').value.toLowerCase();
-  let list = Object.values(reminders);
-
-  // Search filter
-  if (q) list = list.filter(r => r.title.toLowerCase().includes(q) || (r.note||'').toLowerCase().includes(q) || (r.category||'').toLowerCase().includes(q));
-
-  // Tab filter
-  if (filter === 'today')    list = list.filter(r => new Date(r.datetime).toDateString() === new Date().toDateString());
+  const all = Object.values(reminders);
+  
+  let list = all.filter(r => (r.type || 'reminder') === currentType);
+  
+  if (filter === 'pending') list = list.filter(r => !r.done);
+  if (filter === 'today')   list = list.filter(r => new Date(r.datetime).toDateString() === new Date().toDateString());
   if (filter === 'upcoming') list = list.filter(r => !r.done && new Date(r.datetime) > now);
   if (filter === 'overdue')  list = list.filter(r => !r.done && new Date(r.datetime) <= now);
   if (filter === 'done')     list = list.filter(r => r.done);
-
+  
   list.sort((a,b) => a.done !== b.done ? (a.done?1:-1) : new Date(a.datetime)-new Date(b.datetime));
-
-  const all = Object.values(reminders);
-  const pending = all.filter(r => !r.done);
+  
+  const reminders_pending = all.filter(r => (r.type || 'reminder') === 'reminder' && !r.done);
+  const tasks_pending = all.filter(r => (r.type || 'reminder') === 'task' && !r.done);
+  document.getElementById('reminderCount').textContent = `${reminders_pending.length} Pending`;
+  document.getElementById('taskCount').textContent = `${tasks_pending.length} Pending`;
+  
+  const currentList = all.filter(r => (r.type || 'reminder') === currentType);
+  const pending = currentList.filter(r => !r.done);
   const todayStr = new Date().toDateString();
-  document.getElementById('statTotal').textContent    = pending.length;
-  document.getElementById('statToday').textContent    = pending.filter(r=>new Date(r.datetime).toDateString()===todayStr).length;
-  document.getElementById('statUpcoming').textContent = pending.filter(r=>new Date(r.datetime)>now).length;
-  document.getElementById('statOverdue').textContent  = pending.filter(r=>new Date(r.datetime)<=now).length;
+  
+  const statsBar = document.getElementById('statsBar');
+  if (currentType === 'reminder') {
+    statsBar.innerHTML = `
+      <div class="stat-chip" onclick="setFilter('pending',document.querySelectorAll('.filter-tab')[0])">
+        <div class="stat-num a1">${pending.length}</div><div class="stat-label">Pending</div>
+      </div>
+      <div class="stat-chip" onclick="setFilter('today',document.querySelectorAll('.filter-tab')[1])">
+        <div class="stat-num a4">${pending.filter(r=>new Date(r.datetime).toDateString()===todayStr).length}</div><div class="stat-label">Today</div>
+      </div>
+      <div class="stat-chip" onclick="setFilter('upcoming',document.querySelectorAll('.filter-tab')[2])">
+        <div class="stat-num a3">${pending.filter(r=>new Date(r.datetime)>now).length}</div><div class="stat-label">Upcoming</div>
+      </div>
+      <div class="stat-chip" onclick="setFilter('overdue',document.querySelectorAll('.filter-tab')[3])">
+        <div class="stat-num a2">${pending.filter(r=>new Date(r.datetime)<=now).length}</div><div class="stat-label">Overdue</div>
+      </div>
+    `;
+  } else {
+    const done_count = currentList.filter(r => r.done).length;
+    statsBar.innerHTML = `
+      <div class="stat-chip" onclick="setFilter('all',document.querySelectorAll('.filter-tab')[0])">
+        <div class="stat-num a1">${currentList.length}</div><div class="stat-label">All</div>
+      </div>
+      <div class="stat-chip" onclick="setFilter('today',document.querySelectorAll('.filter-tab')[1])">
+        <div class="stat-num a4">${currentList.filter(r=>new Date(r.datetime).toDateString()===todayStr).length}</div><div class="stat-label">Today</div>
+      </div>
+      <div class="stat-chip" onclick="setFilter('upcoming',document.querySelectorAll('.filter-tab')[2])">
+        <div class="stat-num a3">${pending.filter(r=>new Date(r.datetime)>now).length}</div><div class="stat-label">Soon</div>
+      </div>
+      <div class="stat-chip" onclick="setFilter('overdue',document.querySelectorAll('.filter-tab')[3])">
+        <div class="stat-num a2">${pending.filter(r=>new Date(r.datetime)<=now).length}</div><div class="stat-label">Overdue</div>
+      </div>
+      <div class="stat-chip" onclick="setFilter('done',document.querySelectorAll('.filter-tab')[4])">
+        <div class="stat-num a4">${done_count}</div><div class="stat-label">Done</div>
+      </div>
+    `;
+  }
 
   const container = document.getElementById('reminderList');
   if (!list.length) {
     const msgs = {
-      all:['🗓️','No reminders yet','Tap + to add your first reminder'],
-      today:['📅','Nothing today!','No reminders scheduled for today'],
-      upcoming:['✅','All clear!','No upcoming reminders'],
+      all:['🗓️','No items yet','Tap + to add'],
+      pending:['📋','All done!','No pending items'],
+      today:['📅','Nothing today!','No items for today'],
+      upcoming:['✅','All clear!','No upcoming items'],
       overdue:['🎉','Nothing overdue!','You\'re on top of everything'],
-      done:['🏆','Nothing done yet','Complete a reminder to see it here']
+      done:['🏆','Nothing done yet','Complete an item to see it here']
     };
     const [i,t,s] = msgs[filter]||msgs.all;
     container.innerHTML = `<div class="empty-state"><div class="empty-icon">${i}</div><div class="empty-title">${t}</div><div class="empty-sub">${s}</div></div>`;
@@ -368,27 +399,19 @@ function render() {
   container.innerHTML = list.map(r => {
     const dt = new Date(r.datetime), ms = dt - now;
     const isOver = !r.done && ms < 0;
-    const isSnoozed = r.snoozedUntil && new Date(r.snoozedUntil) > now;
     const pCls = {high:'p-high',med:'p-med',low:'p-low'}[r.priority]||'p-med';
-    const cardCls = r.done?'done':isSnoozed?'snoozed':isOver?'overdue':'upcoming';
+    const cardCls = r.done?'done':isOver?'overdue':'upcoming';
 
     let cd = '';
     if (!r.done) {
-      if (isSnoozed) {
-        const snoozeMs = new Date(r.snoozedUntil) - now;
-        cd = `<div class="countdown snoozed-lbl">💤 Snoozed — rings in ${dur(snoozeMs)}</div>`;
-      } else if (isOver) {
-        cd = `<div class="countdown overdue">⚠ ${dur(-ms)} ago</div>`;
-      } else {
-        cd = `<div class="countdown">⏱ in ${dur(ms)}</div>`;
-      }
+      if (isOver) cd = `<div class="countdown overdue">⚠ ${dur(-ms)} ago</div>`;
+      else cd = `<div class="countdown">⏱ in ${dur(ms)}</div>`;
     }
 
-    const recurLabel = r.recur && r.recur !== 'none'
+    const recurLabel = (r.type || 'reminder') === 'reminder' && r.recur && r.recur !== 'none'
       ? `<span class="recur-badge">🔁 ${r.recur}</span>` : '';
-    
-    // Calculate days since creation
-    const createdAt = r.createdAt || r.id; // fallback to id timestamp for old reminders
+
+    const createdAt = r.createdAt || r.id;
     const ageMs = now - createdAt;
     const ageDays = Math.floor(ageMs / (1000 * 60 * 60 * 24));
     const ageLabel = ageDays === 0 ? 'Today' : ageDays === 1 ? '1 day ago' : `${ageDays} days ago`;
@@ -423,23 +446,17 @@ function checkAlerts() {
   const now = Date.now();
   Object.values(reminders).forEach(r => {
     if (r.done || r.alerted) return;
-    if (r.snoozedUntil && new Date(r.snoozedUntil) > now) return;
     const t = new Date(r.datetime).getTime();
-    // Trigger if time has passed and within last 5 minutes (to catch missed alerts)
     if (t <= now && t > now - 300000) {
-      // Show toast notification
       showToast(`🔔 Reminder: ${r.title}`);
       
-      // Handle recurrence
-      if (r.recur && r.recur !== 'none') {
+      if ((r.type || 'reminder') === 'reminder' && r.recur && r.recur !== 'none') {
         const dt = new Date(r.datetime);
         if (r.recur === 'daily')   dt.setDate(dt.getDate() + 1);
         if (r.recur === 'weekly')  dt.setDate(dt.getDate() + 7);
         if (r.recur === 'monthly') dt.setMonth(dt.getMonth() + 1);
-        // Update the same reminder with new datetime and reset alerted
         fbUpdate(r.id, { datetime: dt.toISOString(), alerted: false });
       } else {
-        // Non-recurring: just mark as alerted
         fbUpdate(r.id, { alerted: true });
       }
     }
@@ -457,19 +474,20 @@ window.saveReminder = async () => {
   if (!date||!time) { showToast('⚠ Please pick a date and time'); return; }
   const id = editId || Date.now().toString();
   await fbSet(id, {
-    id, title, note, category: cat, priority: selPriority, recur: selRecur,
+    id, title, note, category: cat, priority: selPriority, 
+    recur: currentType === 'reminder' ? selRecur : 'none',
+    type: currentType,
     datetime: new Date(`${date}T${time}`).toISOString(),
     done: reminders[id]?.done || false,
     alerted: reminders[id]?.alerted || false,
-    snoozedUntil: reminders[id]?.snoozedUntil || null,
     createdAt: reminders[id]?.createdAt || Date.now(),
     updatedAt: Date.now()
   });
   closeModal();
-  showToast(editId ? '✏️ Reminder updated' : '✅ Reminder added');
+  showToast(editId ? '✏️ Updated' : '✅ Added');
 };
 
-// ── Confetti Celebration ──
+// ── Confetti ──
 function launchConfetti() {
   const canvas = document.getElementById('confettiCanvas');
   const ctx = canvas.getContext('2d');
@@ -535,14 +553,12 @@ window.toggleDone = async (id) => {
   
   const done = !r.done;
   
-  // If marking as done AND it's a recurring task
-  if (done && r.recur && r.recur !== 'none') {
+  if (done && (r.type || 'reminder') === 'reminder' && r.recur && r.recur !== 'none') {
     const dt = new Date(r.datetime);
     if (r.recur === 'daily')   dt.setDate(dt.getDate() + 1);
     if (r.recur === 'weekly')  dt.setDate(dt.getDate() + 7);
     if (r.recur === 'monthly') dt.setMonth(dt.getMonth() + 1);
     
-    // Reschedule the task for next occurrence and mark as pending
     await fbUpdate(id, { 
       datetime: dt.toISOString(), 
       done: false, 
@@ -554,16 +570,16 @@ window.toggleDone = async (id) => {
     const nextLabel = r.recur === 'daily' ? 'tomorrow' : r.recur === 'weekly' ? 'next week' : 'next month';
     showToast(`🎉 Done! Rescheduled for ${nextLabel}`);
   } else {
-    // Normal toggle
     await fbUpdate(id, { done, updatedAt: Date.now() });
-    if (done) { launchConfetti(); showToast('🎉 Great job! Task completed!'); }
+    if (done) { launchConfetti(); showToast('🎉 Great job!'); }
     else showToast('↩ Marked incomplete');
   }
 };
+
 window.delR = async (id) => {
-  if (!confirm('Delete this reminder?')) return;
+  if (!confirm('Delete this item?')) return;
   await fbRemove(id);
-  showToast('🗑 Reminder deleted');
+  showToast('🗑 Deleted');
 };
 window.editR = (id) => openModal(id);
 
@@ -579,8 +595,12 @@ window.openModal = (id=null) => {
   document.getElementById('rCategory').value = r ? (r.category||'Personal') : 'Personal';
   selPriority = r ? (r.priority||'med') : 'med';
   selRecur    = r ? (r.recur||'none')   : 'none';
-  document.getElementById('modalTitle').textContent = r ? 'Edit Reminder' : 'New Reminder';
-  document.getElementById('submitBtn').textContent  = r ? 'Update Reminder' : 'Set Reminder';
+  
+  // Hide recurring for tasks
+  document.getElementById('recurGroup').style.display = currentType === 'task' ? 'none' : 'block';
+  
+  document.getElementById('modalTitle').textContent  = r ? (currentType === 'reminder' ? 'Edit Reminder' : 'Edit Task') : (currentType === 'reminder' ? 'New Reminder' : 'New Task');
+  document.getElementById('submitBtn').textContent   = r ? 'Update' : (currentType === 'reminder' ? 'Set Reminder' : 'Add Task');
   updatePUI(); updateRUI();
   document.getElementById('addModal').classList.add('open');
   setTimeout(()=>document.getElementById('rTitle').focus(), 350);
@@ -646,7 +666,7 @@ document.getElementById('hWeekday').textContent=now0.toLocaleDateString('en-US',
 
 setInterval(render,30000);
 setInterval(checkAlerts,5000);
-checkAlerts(); // Check immediately on load
+checkAlerts();
 
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape') window.closeModal();
