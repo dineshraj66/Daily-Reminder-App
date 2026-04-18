@@ -397,27 +397,33 @@ async function fbRemove(id) { await remove(ref(db, `reminders/${id}`)); }
 // ── Switch Type ──
 window.switchTo = (type) => {
   currentType = type;
-  filter = 'today';
+  filter = type === 'task' ? 'today' : 'today'; // Both default to today
   
   document.getElementById('reminderBox').classList.toggle('active', type === 'reminder');
   document.getElementById('taskBox').classList.toggle('active', type === 'task');
   document.getElementById('sectionTitle').textContent = type === 'reminder' ? 'Reminders' : 'Tasks';
   
+  // Show/hide stats bar and filter tabs
+  const statsBar = document.getElementById('statsBar');
   const filterTabs = document.getElementById('filterTabs');
-  if (type === 'reminder') {
+  
+  if (type === 'task') {
+    // Hide stats but show filters for tasks
+    statsBar.style.display = 'none';
+    filterTabs.innerHTML = `
+      <button class="filter-tab" onclick="setFilter('backlog',this)">Backlog</button>
+      <button class="filter-tab active" onclick="setFilter('today',this)">Today</button>
+      <button class="filter-tab" onclick="setFilter('due',this)">Due</button>
+      <button class="filter-tab" onclick="setFilter('done',this)">Done</button>
+    `;
+  } else {
+    // Show stats and filters for reminders
+    statsBar.style.display = 'flex';
     filterTabs.innerHTML = `
       <button class="filter-tab" onclick="setFilter('pending',this)">Pending</button>
       <button class="filter-tab active" onclick="setFilter('today',this)">Today</button>
       <button class="filter-tab" onclick="setFilter('upcoming',this)">Soon</button>
       <button class="filter-tab" onclick="setFilter('overdue',this)">Overdue</button>
-    `;
-  } else {
-    filterTabs.innerHTML = `
-      <button class="filter-tab" onclick="setFilter('all',this)">All</button>
-      <button class="filter-tab active" onclick="setFilter('today',this)">Today</button>
-      <button class="filter-tab" onclick="setFilter('upcoming',this)">Soon</button>
-      <button class="filter-tab" onclick="setFilter('overdue',this)">Overdue</button>
-      <button class="filter-tab" onclick="setFilter('done',this)">Done</button>
     `;
   }
   
@@ -434,11 +440,18 @@ function render() {
   
   let list = all.filter(r => (r.type || 'reminder') === currentType);
   
+  // Reminder filters
   if (filter === 'pending') list = list.filter(r => !r.done);
-  if (filter === 'today')   list = list.filter(r => new Date(r.datetime).toDateString() === new Date().toDateString());
   if (filter === 'upcoming') list = list.filter(r => !r.done && new Date(r.datetime) > now);
   if (filter === 'overdue')  list = list.filter(r => !r.done && new Date(r.datetime) <= now);
-  if (filter === 'done')     list = list.filter(r => r.done);
+  
+  // Task filters
+  if (filter === 'backlog') list = list.filter(r => !r.done && new Date(r.datetime) > new Date().setHours(23,59,59,999)); // Future tasks
+  if (filter === 'due')     list = list.filter(r => !r.done && new Date(r.datetime) <= now); // Overdue tasks
+  
+  // Common filters
+  if (filter === 'today')   list = list.filter(r => new Date(r.datetime).toDateString() === new Date().toDateString());
+  if (filter === 'done')    list = list.filter(r => r.done);
   
   list.sort((a,b) => a.done !== b.done ? (a.done?1:-1) : new Date(a.datetime)-new Date(b.datetime));
   
@@ -467,26 +480,8 @@ function render() {
         <div class="stat-num a2">${pending.filter(r=>new Date(r.datetime)<=now).length}</div><div class="stat-label">Overdue</div>
       </div>
     `;
-  } else {
-    const done_count = currentList.filter(r => r.done).length;
-    statsBar.innerHTML = `
-      <div class="stat-chip" onclick="setFilter('all',document.querySelectorAll('.filter-tab')[0])">
-        <div class="stat-num a1">${currentList.length}</div><div class="stat-label">All</div>
-      </div>
-      <div class="stat-chip" onclick="setFilter('today',document.querySelectorAll('.filter-tab')[1])">
-        <div class="stat-num a4">${currentList.filter(r=>new Date(r.datetime).toDateString()===todayStr).length}</div><div class="stat-label">Today</div>
-      </div>
-      <div class="stat-chip" onclick="setFilter('upcoming',document.querySelectorAll('.filter-tab')[2])">
-        <div class="stat-num a3">${pending.filter(r=>new Date(r.datetime)>now).length}</div><div class="stat-label">Soon</div>
-      </div>
-      <div class="stat-chip" onclick="setFilter('overdue',document.querySelectorAll('.filter-tab')[3])">
-        <div class="stat-num a2">${pending.filter(r=>new Date(r.datetime)<=now).length}</div><div class="stat-label">Overdue</div>
-      </div>
-      <div class="stat-chip" onclick="setFilter('done',document.querySelectorAll('.filter-tab')[4])">
-        <div class="stat-num a4">${done_count}</div><div class="stat-label">Done</div>
-      </div>
-    `;
   }
+  // No stats for tasks
 
   const container = document.getElementById('reminderList');
   if (!list.length) {
@@ -496,6 +491,8 @@ function render() {
       today:['📅','Nothing today!','No items for today'],
       upcoming:['✅','All clear!','No upcoming items'],
       overdue:['🎉','Nothing overdue!','You\'re on top of everything'],
+      backlog:['📦','No backlog!','All future tasks cleared'],
+      due:['🎉','Nothing due!','You\'re on top of everything'],
       done:['🏆','Nothing done yet','Complete an item to see it here']
     };
     const [i,t,s] = msgs[filter]||msgs.all;
@@ -508,39 +505,41 @@ function render() {
     const isOver = !r.done && ms < 0;
     const pCls = {high:'p-high',med:'p-med',low:'p-low'}[r.priority]||'p-med';
     const cardCls = r.done?'done':isOver?'overdue':'upcoming';
+    
+    const isTask = (r.type || 'reminder') === 'task';
 
-    let cd = '';
-    if (!r.done) {
-      if (isOver) cd = `<div class="countdown overdue">⚠ ${dur(-ms)} ago</div>`;
-      else cd = `<div class="countdown">⏱ in ${dur(ms)}</div>`;
-    }
-
-    let recurLabel = '';
-    if ((r.type || 'reminder') === 'reminder' && r.recur && r.recur !== 'none') {
-      let recurText = r.recur;
-      if (r.recur === 'custom' && r.customRecur) {
-        const customLabels = {
-          weekdays: `Weekdays: ${r.customRecur.weekdays.map(d => ['Su','M','T','W','Th','F','Sa'][d]).join(',')}`,
-          lastday: 'Last day/month',
-          monthdate: `${r.customRecur.monthDate}th/month`,
-          firstweekday: 'First weekday',
-          lastweekday: 'Last weekday'
-        };
-        recurText = customLabels[r.customRecur.type] || 'custom';
+    // Metadata for reminders only
+    let metaContent = '';
+    if (!isTask) {
+      let cd = '';
+      if (!r.done) {
+        if (isOver) cd = `<div class="countdown overdue">⚠ ${dur(-ms)} ago</div>`;
+        else cd = `<div class="countdown">⏱ in ${dur(ms)}</div>`;
       }
-      recurLabel = `<span class="recur-badge">🔁 ${recurText}</span>`;
-    }
 
-    const createdAt = r.createdAt || r.id;
-    const ageMs = now - createdAt;
-    const ageDays = Math.floor(ageMs / (1000 * 60 * 60 * 24));
-    const ageLabel = ageDays === 0 ? 'Today' : ageDays === 1 ? '1 day ago' : `${ageDays} days ago`;
-    const ageBadge = `<span class="age-badge">📅 ${ageLabel}</span>`;
+      let recurLabel = '';
+      if (r.recur && r.recur !== 'none') {
+        let recurText = r.recur;
+        if (r.recur === 'custom' && r.customRecur) {
+          const customLabels = {
+            weekdays: `Weekdays: ${r.customRecur.weekdays.map(d => ['Su','M','T','W','Th','F','Sa'][d]).join(',')}`,
+            lastday: 'Last day/month',
+            monthdate: `${r.customRecur.monthDate}th/month`,
+            firstweekday: 'First weekday',
+            lastweekday: 'Last weekday'
+          };
+          recurText = customLabels[r.customRecur.type] || 'custom';
+        }
+        recurLabel = `<span class="recur-badge">🔁 ${recurText}</span>`;
+      }
 
-    return `<div class="reminder-card ${cardCls}">
-      <div class="priority-dot ${pCls}"></div>
-      <div class="reminder-info">
-        <div class="reminder-title">${esc(r.title)}</div>
+      const createdAt = r.createdAt || r.id;
+      const ageMs = now - createdAt;
+      const ageDays = Math.floor(ageMs / (1000 * 60 * 60 * 24));
+      const ageLabel = ageDays === 0 ? 'Today' : ageDays === 1 ? '1 day ago' : `${ageDays} days ago`;
+      const ageBadge = `<span class="age-badge">📅 ${ageLabel}</span>`;
+      
+      metaContent = `
         <div class="reminder-meta">
           <span class="reminder-time">${ft(dt)}</span>
           <span class="reminder-date-lbl">${fd(dt)}</span>
@@ -550,6 +549,17 @@ function render() {
         </div>
         ${r.note?`<div class="reminder-date-lbl" style="margin-top:3px;font-size:12px">${esc(r.note)}</div>`:''}
         ${cd}
+      `;
+    } else {
+      // For tasks, only show note if exists
+      metaContent = r.note ? `<div class="reminder-date-lbl" style="margin-top:3px;font-size:12px">${esc(r.note)}</div>` : '';
+    }
+
+    return `<div class="reminder-card ${cardCls}">
+      <div class="priority-dot ${pCls}"></div>
+      <div class="reminder-info">
+        <div class="reminder-title">${esc(r.title)}</div>
+        ${metaContent}
       </div>
       <div class="card-actions">
         <button class="icon-btn ${r.done?'done-btn':''}" onclick="toggleDone('${r.id}')" title="${r.done?'Undo':'Done'}">${r.done?'↩':'✓'}</button>
