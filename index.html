@@ -134,6 +134,20 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--card);border:1px solid var(--border);border-radius:12px;padding:11px 18px;font-size:13px;font-weight:500;opacity:0;transition:all 0.3s;z-index:500;white-space:nowrap;box-shadow:var(--shadow)}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
+/* Bulk Delete */
+.bulk-delete-bar{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:2px solid var(--danger);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;z-index:150;transform:translateY(100%);transition:transform 0.3s}
+.bulk-delete-bar.active{transform:translateY(0)}
+.bulk-info{font-size:14px;font-weight:600}
+.bulk-actions{display:flex;gap:10px}
+.bulk-btn{padding:10px 16px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.2s}
+.bulk-btn.delete{background:var(--danger);border-color:var(--danger);color:white}
+.bulk-btn.delete:hover{opacity:0.85}
+.bulk-select-checkbox{width:20px;height:20px;border-radius:6px;border:2px solid var(--border);background:var(--surface);cursor:pointer;transition:all 0.2s;flex-shrink:0}
+.bulk-select-checkbox.checked{background:var(--accent);border-color:var(--accent)}
+.reminder-card.bulk-mode .card-actions{display:none}
+.reminder-card.bulk-mode{cursor:pointer}
+.reminder-card.bulk-mode.selected{background:rgba(124,106,247,0.1);border-color:var(--accent)}
+
 /* Custom Recur Modal */
 .custom-recur-group{margin-top:12px;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm)}
 .custom-recur-title{font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
@@ -196,7 +210,10 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
   <div class="section">
     <div class="section-header">
       <div class="section-title" id="sectionTitle">Tasks</div>
-      <div class="filter-tabs" id="filterTabs"></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="filter-tab" id="bulkDeleteBtn" onclick="toggleBulkMode()" style="background:var(--danger);border-color:var(--danger);color:white;padding:4px 12px">Select</button>
+        <div class="filter-tabs" id="filterTabs"></div>
+      </div>
     </div>
     <div class="reminders-list" id="reminderList">
       <div class="loading-state">
@@ -338,7 +355,28 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
         </div>
       </div>
     </div>
+    <div class="form-group" id="createTaskGroup" style="display:none">
+      <label class="form-label" style="display:flex;align-items:center;gap:8px;cursor:pointer">
+        <input type="checkbox" id="createTaskCheck" style="width:18px;height:18px;cursor:pointer">
+        <span>Create task when reminder triggers</span>
+      </label>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;margin-left:26px">
+        A new task will be automatically added to your Tasks tab when this reminder fires
+      </div>
+    </div>
     <button class="submit-btn" id="submitBtn" onclick="saveReminder()">Set Reminder</button>
+  </div>
+</div>
+
+<div class="bulk-delete-bar" id="bulkBar">
+  <div class="bulk-info">
+    <span id="bulkCount">0</span> selected
+  </div>
+  <div class="bulk-actions">
+    <button class="bulk-btn" onclick="selectAll()">Select All</button>
+    <button class="bulk-btn" onclick="deselectAll()">Deselect All</button>
+    <button class="bulk-btn delete" onclick="bulkDelete()">Delete Selected</button>
+    <button class="bulk-btn" onclick="toggleBulkMode()">Cancel</button>
   </div>
 </div>
 
@@ -374,6 +412,8 @@ let monthDate = 15;
 let firstWeekday = 1; // Monday
 let lastWeekday = 5; // Friday
 let theme = localStorage.getItem('theme') || 'dark';
+let bulkMode = false;
+let selectedItems = new Set();
 
 document.documentElement.setAttribute('data-theme', theme);
 document.getElementById('themeBtn').textContent = theme === 'dark' ? '🌙' : '☀️';
@@ -432,6 +472,76 @@ window.switchTo = (type) => {
 
 // Initialize on load
 switchTo('task');
+
+// ── Bulk Delete ──
+window.toggleBulkMode = () => {
+  bulkMode = !bulkMode;
+  selectedItems.clear();
+  document.getElementById('bulkBar').classList.toggle('active', bulkMode);
+  document.getElementById('bulkDeleteBtn').textContent = bulkMode ? 'Cancel' : 'Select';
+  document.getElementById('bulkDeleteBtn').style.background = bulkMode ? 'var(--surface)' : 'var(--danger)';
+  document.getElementById('bulkDeleteBtn').style.color = bulkMode ? 'var(--text)' : 'white';
+  render();
+};
+
+window.toggleSelection = (id) => {
+  if (!bulkMode) return;
+  if (selectedItems.has(id)) {
+    selectedItems.delete(id);
+  } else {
+    selectedItems.add(id);
+  }
+  render();
+};
+
+window.selectAll = () => {
+  const now = Date.now();
+  const all = Object.values(reminders);
+  let list = all.filter(r => (r.type || 'reminder') === currentType);
+  
+  // Apply same filters as render
+  if (filter === 'pending') list = list.filter(r => !r.done);
+  if (filter === 'upcoming') list = list.filter(r => !r.done && new Date(r.datetime) > now);
+  if (filter === 'overdue')  list = list.filter(r => !r.done && new Date(r.datetime) <= now);
+  if (filter === 'backlog') list = list.filter(r => !r.done && new Date(r.datetime) > new Date().setHours(23,59,59,999));
+  if (filter === 'due')     list = list.filter(r => !r.done && new Date(r.datetime) <= now);
+  if (filter === 'today')   list = list.filter(r => new Date(r.datetime).toDateString() === new Date().toDateString());
+  if (filter === 'done')    list = list.filter(r => r.done);
+  
+  list.forEach(r => selectedItems.add(r.id));
+  render();
+};
+
+window.deselectAll = () => {
+  selectedItems.clear();
+  render();
+};
+
+window.bulkDelete = async () => {
+  if (selectedItems.size === 0) {
+    showToast('⚠ No items selected');
+    return;
+  }
+  
+  const count = selectedItems.size;
+  const confirmed = confirm(`Delete ${count} items?`);
+  if (!confirmed) return;
+  
+  showToast(`🗑 Deleting ${count} items...`);
+  
+  for (const id of selectedItems) {
+    await fbRemove(id);
+  }
+  
+  selectedItems.clear();
+  bulkMode = false;
+  document.getElementById('bulkBar').classList.remove('active');
+  document.getElementById('bulkDeleteBtn').textContent = 'Select';
+  document.getElementById('bulkDeleteBtn').style.background = 'var(--danger)';
+  document.getElementById('bulkDeleteBtn').style.color = 'white';
+  
+  showToast(`✅ Deleted ${count} items`);
+};
 
 // ── Render ──
 function render() {
@@ -555,8 +665,12 @@ function render() {
       metaContent = r.note ? `<div class="reminder-date-lbl" style="margin-top:3px;font-size:12px">${esc(r.note)}</div>` : '';
     }
 
-    return `<div class="reminder-card ${cardCls}">
-      <div class="priority-dot ${pCls}"></div>
+    const isSelected = selectedItems.has(r.id);
+    const bulkClass = bulkMode ? 'bulk-mode' : '';
+    const selectedClass = isSelected ? 'selected' : '';
+    
+    return `<div class="reminder-card ${cardCls} ${bulkClass} ${selectedClass}" ${bulkMode ? `onclick="toggleSelection('${r.id}')"` : ''}>
+      ${bulkMode ? `<div class="bulk-select-checkbox ${isSelected?'checked':''}"></div>` : `<div class="priority-dot ${pCls}"></div>`}
       <div class="reminder-info">
         <div class="reminder-title">${esc(r.title)}</div>
         ${metaContent}
@@ -568,6 +682,9 @@ function render() {
       </div>
     </div>`;
   }).join('');
+  
+  // Update bulk count
+  document.getElementById('bulkCount').textContent = selectedItems.size;
 }
 window.render = render;
 
@@ -646,33 +763,112 @@ function getNextCustomRecurrence(datetime, customRecur) {
 }
 
 // ── Alerts ──
-function checkAlerts() {
+async function checkAlerts() {
   const now = Date.now();
-  Object.values(reminders).forEach(r => {
-    if (r.done || r.alerted) return;
+  const allReminders = Object.values(reminders);
+  
+  console.log('Checking alerts...', allReminders.length, 'reminders');
+  
+  for (const r of allReminders) {
+    if (r.done || r.alerted) continue;
+    
     const t = new Date(r.datetime).getTime();
-    if (t <= now && t > now - 300000) {
-      showToast(`🔔 Reminder: ${r.title}`);
+    
+    console.log('Checking reminder:', r.title, 'createTask:', r.createTask, 'time diff:', (t - now) / 1000, 'seconds');
+    
+    // Fire if time has passed (no 5-minute restriction)
+    if (t <= now) {
+      console.log('⏰ ALERT FIRING for:', r.title, 'createTask flag:', r.createTask);
       
-      if ((r.type || 'reminder') === 'reminder' && r.recur && r.recur !== 'none') {
-        let nextDt;
+      // Check if we need to create a task
+      if (r.createTask) {
+        console.log('🎯 Creating task for:', r.title);
         
-        if (r.recur === 'custom' && r.customRecur) {
-          nextDt = getNextCustomRecurrence(r.datetime, r.customRecur);
+        // CRITICAL: Update reminder FIRST to prevent re-firing during task creation
+        // Handle recurring vs non-recurring
+        if ((r.type || 'reminder') === 'reminder' && r.recur && r.recur !== 'none') {
+          // Recurring: Reschedule for next occurrence
+          let nextDt;
+          
+          if (r.recur === 'custom' && r.customRecur) {
+            nextDt = getNextCustomRecurrence(r.datetime, r.customRecur);
+          } else {
+            const dt = new Date(r.datetime);
+            if (r.recur === 'daily')   dt.setDate(dt.getDate() + 1);
+            if (r.recur === 'weekly')  dt.setDate(dt.getDate() + 7);
+            if (r.recur === 'monthly') dt.setMonth(dt.getMonth() + 1);
+            nextDt = dt;
+          }
+          
+          // Update FIRST - reschedule and mark as alerted to prevent re-firing
+          await fbUpdate(r.id, { datetime: nextDt.toISOString(), alerted: false, done: false });
         } else {
-          const dt = new Date(r.datetime);
-          if (r.recur === 'daily')   dt.setDate(dt.getDate() + 1);
-          if (r.recur === 'weekly')  dt.setDate(dt.getDate() + 7);
-          if (r.recur === 'monthly') dt.setMonth(dt.getMonth() + 1);
-          nextDt = dt;
+          // Non-recurring: Mark as BOTH alerted AND done FIRST
+          await fbUpdate(r.id, { alerted: true, done: true });
         }
         
-        fbUpdate(r.id, { datetime: nextDt.toISOString(), alerted: false });
+        // NOW create the task (reminder is already updated)
+        const taskId = Date.now().toString() + '_task_' + Math.random().toString(36).substr(2, 9);
+        
+        // Set task to TODAY at the reminder's original time
+        const taskDate = new Date(r.datetime);
+        const today = new Date();
+        taskDate.setFullYear(today.getFullYear(), today.getMonth(), today.getDate());
+        
+        const taskData = {
+          id: taskId,
+          title: r.title,
+          note: r.note || '',
+          category: r.category || 'Personal',
+          priority: r.priority || 'med',
+          type: 'task',
+          recur: 'none',
+          datetime: taskDate.toISOString(), // Today at reminder's time
+          done: false,
+          alerted: false,
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        };
+        
+        console.log('Task data:', taskData);
+        
+        await fbSet(taskId, taskData);
+        console.log('✅ Task created with ID:', taskId);
+        
+        // Show appropriate toast
+        if ((r.type || 'reminder') === 'reminder' && r.recur && r.recur !== 'none') {
+          const nextDt = new Date(r.datetime);
+          if (r.recur === 'daily')   nextDt.setDate(nextDt.getDate() + 1);
+          if (r.recur === 'weekly')  nextDt.setDate(nextDt.getDate() + 7);
+          if (r.recur === 'monthly') nextDt.setMonth(nextDt.getMonth() + 1);
+          showToast(`🔔 ${r.title} → Task created! Next: ${nextDt.toLocaleDateString()}`);
+        } else {
+          showToast(`🔔 ${r.title} → Task created!`);
+        }
       } else {
-        fbUpdate(r.id, { alerted: true });
+        console.log('No createTask flag, showing normal reminder');
+        showToast(`🔔 Reminder: ${r.title}`);
+        
+        if ((r.type || 'reminder') === 'reminder' && r.recur && r.recur !== 'none') {
+          let nextDt;
+          
+          if (r.recur === 'custom' && r.customRecur) {
+            nextDt = getNextCustomRecurrence(r.datetime, r.customRecur);
+          } else {
+            const dt = new Date(r.datetime);
+            if (r.recur === 'daily')   dt.setDate(dt.getDate() + 1);
+            if (r.recur === 'weekly')  dt.setDate(dt.getDate() + 7);
+            if (r.recur === 'monthly') dt.setMonth(dt.getMonth() + 1);
+            nextDt = dt;
+          }
+          
+          await fbUpdate(r.id, { datetime: nextDt.toISOString(), alerted: false });
+        } else {
+          await fbUpdate(r.id, { alerted: true });
+        }
       }
     }
-  });
+  }
 }
 
 // ── CRUD ──
@@ -702,10 +898,13 @@ window.saveReminder = async () => {
     lastWeekday: customRecurType === 'lastweekday' ? lastWeekday : null
   } : null;
   
+  const createTask = currentType === 'reminder' ? document.getElementById('createTaskCheck').checked : false;
+  
   await fbSet(id, {
     id, title, note, category: cat, priority: selPriority, 
     recur: currentType === 'reminder' ? selRecur : 'none',
     customRecur: recurData,
+    createTask: createTask,
     type: currentType,
     datetime: new Date(`${date}T${time}`).toISOString(),
     done: reminders[id]?.done || false,
@@ -822,7 +1021,7 @@ window.toggleDone = async (id) => {
 };
 
 window.delR = async (id) => {
-  if (!confirm('Delete this item?')) return;
+  // Removed confirmation for quick bulk deletion
   await fbRemove(id);
   showToast('🗑 Deleted');
 };
@@ -840,6 +1039,9 @@ window.openModal = (id=null) => {
   document.getElementById('rCategory').value = r ? (r.category||'Personal') : 'Personal';
   selPriority = r ? (r.priority||'med') : 'med';
   selRecur    = r ? (r.recur||'none')   : 'none';
+  
+  // Load createTask checkbox
+  document.getElementById('createTaskCheck').checked = r ? (r.createTask || false) : false;
   
   // Load custom recur data
   if (r && r.customRecur) {
@@ -866,8 +1068,10 @@ window.openModal = (id=null) => {
     updateWeekdayUI();
   }
   
-  // Hide recurring for tasks
-  document.getElementById('recurGroup').style.display = currentType === 'task' ? 'none' : 'block';
+  // Show/hide recurring and createTask for reminders only (hide for tasks)
+  const isReminder = currentType === 'reminder';
+  document.getElementById('recurGroup').style.display = isReminder ? 'block' : 'none';
+  document.getElementById('createTaskGroup').style.display = isReminder ? 'block' : 'none';
   document.getElementById('customRecurGroup').style.display = selRecur === 'custom' ? 'block' : 'none';
   
   document.getElementById('modalTitle').textContent  = r ? (currentType === 'reminder' ? 'Edit Reminder' : 'Edit Task') : (currentType === 'reminder' ? 'New Reminder' : 'New Task');
