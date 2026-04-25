@@ -64,7 +64,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .filter-tab.active{background:var(--accent);border-color:var(--accent);color:#fff}
 
 .reminders-list{display:flex;flex-direction:column;gap:9px}
-.reminder-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;display:flex;align-items:center;gap:12px;position:relative;overflow:hidden;transition:transform 0.15s;animation:slideIn 0.3s ease}
+.reminder-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;display:flex;flex-direction:column;gap:10px;position:relative;transition:transform 0.15s;animation:slideIn 0.3s ease}
 @keyframes slideIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 .reminder-card:active{transform:scale(0.98)}
 .reminder-card.done{opacity:0.45}
@@ -72,13 +72,15 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .reminder-card.overdue::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--danger)}
 .reminder-card.upcoming::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent3)}
 
-.priority-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.card-content{display:flex;align-items:flex-start;gap:12px;flex:1}
+
+.priority-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-top:6px}
 .p-high{background:var(--accent2);box-shadow:0 0 8px rgba(249,123,107,0.5)}
 .p-med{background:#f5c842;box-shadow:0 0 6px rgba(245,200,66,0.4)}
 .p-low{background:var(--accent3);box-shadow:0 0 6px rgba(91,219,189,0.4)}
 
 .reminder-info{flex:1;min-width:0}
-.reminder-title{font-weight:500;font-size:15px;word-wrap:break-word;white-space:normal}
+.reminder-title{font-weight:500;font-size:15px;word-wrap:break-word;word-break:break-word;white-space:normal;overflow-wrap:break-word}
 .reminder-meta{display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap}
 .reminder-time{font-size:12px;color:var(--accent);font-family:'Syne',sans-serif;font-weight:600}
 .reminder-date-lbl{font-size:12px;color:var(--muted)}
@@ -88,7 +90,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .countdown{font-size:11px;color:var(--accent3);margin-top:3px}
 .countdown.overdue{color:var(--danger)}
 
-.card-actions{display:flex;gap:6px;flex-shrink:0}
+.card-actions{display:flex;gap:6px;justify-content:flex-end;align-items:center;padding-top:6px;border-top:1px solid var(--border)}
 .task-badge{position:absolute;top:8px;right:8px;background:var(--accent);color:white;font-size:9px;font-weight:700;padding:3px 7px;border-radius:6px;text-transform:uppercase;letter-spacing:0.5px;z-index:10}
 .icon-btn{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;transition:all 0.15s}
 .icon-btn:hover{color:var(--text);border-color:var(--accent)}
@@ -428,7 +430,8 @@ onValue(ref(db, '.info/connected'), snap => {
 onValue(ref(db, 'reminders'), snap => {
   reminders = snap.val() || {};
   render();
-  checkAlerts();
+  // Don't call checkAlerts here - let the setInterval handle it
+  // This prevents double-firing when reminder updates trigger the listener
 });
 
 async function fbSet(id, data) { await set(ref(db, `reminders/${id}`), data); }
@@ -687,10 +690,12 @@ function render() {
     
     return `<div class="reminder-card ${cardCls} ${bulkClass} ${selectedClass}" ${bulkMode ? `onclick="toggleSelection('${r.id}')"` : ''}>
       ${r.createTask ? '<div class="task-badge">Task</div>' : ''}
-      ${bulkMode ? `<div class="bulk-select-checkbox ${isSelected?'checked':''}"></div>` : `<div class="priority-dot ${pCls}"></div>`}
-      <div class="reminder-info">
-        <div class="reminder-title">${esc(r.title)}</div>
-        ${metaContent}
+      <div class="card-content">
+        ${bulkMode ? `<div class="bulk-select-checkbox ${isSelected?'checked':''}"></div>` : `<div class="priority-dot ${pCls}"></div>`}
+        <div class="reminder-info">
+          <div class="reminder-title">${esc(r.title)}</div>
+          ${metaContent}
+        </div>
       </div>
       <div class="card-actions">
         <button class="icon-btn ${r.done?'done-btn':''}" onclick="toggleDone('${r.id}')" title="${r.done?'Undo':'Done'}">${r.done?'↩':'✓'}</button>
@@ -780,26 +785,59 @@ function getNextCustomRecurrence(datetime, customRecur) {
 }
 
 // ── Alerts ──
+let alertCheckInProgress = false;
+
 async function checkAlerts() {
-  const now = Date.now();
-  const allReminders = Object.values(reminders);
+  // Prevent simultaneous runs
+  if (alertCheckInProgress) {
+    console.log('⏭ Alert check already in progress, skipping');
+    return;
+  }
   
-  console.log('Checking alerts...', allReminders.length, 'reminders');
+  alertCheckInProgress = true;
   
-  for (const r of allReminders) {
-    if (r.done || r.alerted) continue;
+  try {
+    const now = Date.now();
+    const allReminders = Object.values(reminders);
     
-    const t = new Date(r.datetime).getTime();
+    console.log('Checking alerts...', allReminders.length, 'reminders');
     
-    console.log('Checking reminder:', r.title, 'createTask:', r.createTask, 'time diff:', (t - now) / 1000, 'seconds');
-    
-    // Fire if time has passed (no 5-minute restriction)
-    if (t <= now) {
-      console.log('⏰ ALERT FIRING for:', r.title, 'createTask flag:', r.createTask);
+    for (const r of allReminders) {
+      if (r.done || r.alerted) continue;
+      
+      const t = new Date(r.datetime).getTime();
+      
+      console.log('Checking reminder:', r.title, 'createTask:', r.createTask, 'time diff:', (t - now) / 1000, 'seconds');
+      
+      // Fire if time has passed (no 5-minute restriction)
+      if (t <= now) {
+        console.log('⏰ ALERT FIRING for:', r.title, 'createTask flag:', r.createTask);
       
       // Check if we need to create a task
       if (r.createTask) {
         console.log('🎯 Creating task for:', r.title);
+        
+        // Safety check: Don't create duplicate tasks
+        // Check if a task with this title already exists for today
+        const todayStr = new Date().toDateString();
+        const existingTask = Object.values(reminders).find(item => 
+          item.type === 'task' && 
+          item.title === r.title && 
+          new Date(item.datetime).toDateString() === todayStr
+        );
+        
+        if (existingTask) {
+          console.log('⚠️ Task already exists for today, skipping creation');
+          // Mark reminder as alerted to prevent checking again
+          if ((r.type || 'reminder') === 'reminder' && r.recur && r.recur !== 'none') {
+            // For recurring, just mark as alerted (will reschedule on next occurrence)
+            await fbUpdate(r.id, { alerted: true });
+          } else {
+            // For non-recurring, mark as done
+            await fbUpdate(r.id, { alerted: true, done: true });
+          }
+          continue;
+        }
         
         // CRITICAL: Update reminder FIRST to prevent re-firing during task creation
         // Handle recurring vs non-recurring
@@ -884,7 +922,12 @@ async function checkAlerts() {
           await fbUpdate(r.id, { alerted: true });
         }
       }
+      }
     }
+  } catch (error) {
+    console.error('Error in checkAlerts:', error);
+  } finally {
+    alertCheckInProgress = false;
   }
 }
 
