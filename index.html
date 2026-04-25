@@ -89,6 +89,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .countdown.overdue{color:var(--danger)}
 
 .card-actions{display:flex;gap:6px;flex-shrink:0}
+.task-badge{position:absolute;top:8px;right:8px;background:var(--accent);color:white;font-size:9px;font-weight:700;padding:3px 7px;border-radius:6px;text-transform:uppercase;letter-spacing:0.5px;z-index:10}
 .icon-btn{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;transition:all 0.15s}
 .icon-btn:hover{color:var(--text);border-color:var(--accent)}
 .icon-btn.done-btn{color:var(--success);border-color:rgba(74,222,128,0.3);background:rgba(74,222,128,0.05)}
@@ -548,12 +549,27 @@ function render() {
   const now = Date.now();
   const all = Object.values(reminders);
   
+  console.log('=== RENDER DEBUG ===');
+  console.log('Total items:', all.length);
+  console.log('Current type:', currentType);
+  console.log('Current filter:', filter);
+  
   let list = all.filter(r => (r.type || 'reminder') === currentType);
+  console.log('After type filter:', list.length, 'items');
   
   // Reminder filters
-  if (filter === 'pending') list = list.filter(r => !r.done);
-  if (filter === 'upcoming') list = list.filter(r => !r.done && new Date(r.datetime) > now);
-  if (filter === 'overdue')  list = list.filter(r => !r.done && new Date(r.datetime) <= now);
+  if (filter === 'pending') {
+    list = list.filter(r => !r.done);
+    console.log('After pending filter (!r.done):', list.length, 'items');
+  }
+  if (filter === 'upcoming') {
+    list = list.filter(r => !r.done && new Date(r.datetime) > now);
+    console.log('After upcoming filter:', list.length, 'items');
+  }
+  if (filter === 'overdue') {
+    list = list.filter(r => !r.done && new Date(r.datetime) <= now);
+    console.log('After overdue filter:', list.length, 'items');
+  }
   
   // Task filters
   if (filter === 'backlog') list = list.filter(r => !r.done && new Date(r.datetime) > new Date().setHours(23,59,59,999)); // Future tasks
@@ -632,9 +648,9 @@ function render() {
         let recurText = r.recur;
         if (r.recur === 'custom' && r.customRecur) {
           const customLabels = {
-            weekdays: `Weekdays: ${r.customRecur.weekdays.map(d => ['Su','M','T','W','Th','F','Sa'][d]).join(',')}`,
+            weekdays: r.customRecur.weekdays ? `Weekdays: ${r.customRecur.weekdays.map(d => ['Su','M','T','W','Th','F','Sa'][d]).join(',')}` : 'Custom weekdays',
             lastday: 'Last day/month',
-            monthdate: `${r.customRecur.monthDate}th/month`,
+            monthdate: r.customRecur.monthDate ? `${r.customRecur.monthDate}th/month` : 'Custom date',
             firstweekday: 'First weekday',
             lastweekday: 'Last weekday'
           };
@@ -670,6 +686,7 @@ function render() {
     const selectedClass = isSelected ? 'selected' : '';
     
     return `<div class="reminder-card ${cardCls} ${bulkClass} ${selectedClass}" ${bulkMode ? `onclick="toggleSelection('${r.id}')"` : ''}>
+      ${r.createTask ? '<div class="task-badge">Task</div>' : ''}
       ${bulkMode ? `<div class="bulk-select-checkbox ${isSelected?'checked':''}"></div>` : `<div class="priority-dot ${pCls}"></div>`}
       <div class="reminder-info">
         <div class="reminder-title">${esc(r.title)}</div>
