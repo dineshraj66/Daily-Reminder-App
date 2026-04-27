@@ -273,6 +273,8 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
         <button class="recur-opt" id="rDaily"  onclick="setRecur('daily')">Daily</button>
         <button class="recur-opt" id="rWeekly" onclick="setRecur('weekly')">Weekly</button>
         <button class="recur-opt" id="rMonthly"onclick="setRecur('monthly')">Monthly</button>
+        <button class="recur-opt" id="rQuarterly"onclick="setRecur('quarterly')">Quarterly</button>
+        <button class="recur-opt" id="rHalfyearly"onclick="setRecur('halfyearly')">Half-yearly</button>
         <button class="recur-opt" id="rCustom" onclick="setRecur('custom')">Custom</button>
       </div>
       <div class="custom-recur-group" id="customRecurGroup" style="display:none">
@@ -584,14 +586,30 @@ function render() {
   
   list.sort((a,b) => a.done !== b.done ? (a.done?1:-1) : new Date(a.datetime)-new Date(b.datetime));
   
-  const reminders_pending = all.filter(r => (r.type || 'reminder') === 'reminder' && !r.done);
-  const tasks_pending = all.filter(r => (r.type || 'reminder') === 'task' && !r.done);
-  document.getElementById('reminderCount').textContent = `${reminders_pending.length} Pending`;
-  document.getElementById('taskCount').textContent = `${tasks_pending.length} Pending`;
+  // Count only Today + Due (not all pending)
+  const todayStr = new Date().toDateString();
+  const nowTime = Date.now();
+  const reminders_today_due = all.filter(r => {
+    const isReminder = (r.type || 'reminder') === 'reminder';
+    const notDone = !r.done;
+    const dt = new Date(r.datetime);
+    const isToday = dt.toDateString() === todayStr;
+    const isDue = dt.getTime() <= nowTime;
+    return isReminder && notDone && (isToday || isDue);
+  });
+  const tasks_today_due = all.filter(r => {
+    const isTask = (r.type || 'reminder') === 'task';
+    const notDone = !r.done;
+    const dt = new Date(r.datetime);
+    const isToday = dt.toDateString() === todayStr;
+    const isDue = dt.getTime() <= nowTime;
+    return isTask && notDone && (isToday || isDue);
+  });
+  document.getElementById('reminderCount').textContent = `${reminders_today_due.length} Today`;
+  document.getElementById('taskCount').textContent = `${tasks_today_due.length} Today`;
   
   const currentList = all.filter(r => (r.type || 'reminder') === currentType);
   const pending = currentList.filter(r => !r.done);
-  const todayStr = new Date().toDateString();
   
   const statsBar = document.getElementById('statsBar');
   if (currentType === 'reminder') {
@@ -852,6 +870,8 @@ async function checkAlerts() {
             if (r.recur === 'daily')   dt.setDate(dt.getDate() + 1);
             if (r.recur === 'weekly')  dt.setDate(dt.getDate() + 7);
             if (r.recur === 'monthly') dt.setMonth(dt.getMonth() + 1);
+            if (r.recur === 'quarterly') dt.setMonth(dt.getMonth() + 3);
+            if (r.recur === 'halfyearly') dt.setMonth(dt.getMonth() + 6);
             nextDt = dt;
           }
           
@@ -914,6 +934,8 @@ async function checkAlerts() {
             if (r.recur === 'daily')   dt.setDate(dt.getDate() + 1);
             if (r.recur === 'weekly')  dt.setDate(dt.getDate() + 7);
             if (r.recur === 'monthly') dt.setMonth(dt.getMonth() + 1);
+            if (r.recur === 'quarterly') dt.setMonth(dt.getMonth() + 3);
+            if (r.recur === 'halfyearly') dt.setMonth(dt.getMonth() + 6);
             nextDt = dt;
           }
           
@@ -1061,6 +1083,8 @@ window.toggleDone = async (id) => {
       if (r.recur === 'daily')   { dt.setDate(dt.getDate() + 1); nextLabel = 'tomorrow'; }
       if (r.recur === 'weekly')  { dt.setDate(dt.getDate() + 7); nextLabel = 'next week'; }
       if (r.recur === 'monthly') { dt.setMonth(dt.getMonth() + 1); nextLabel = 'next month'; }
+      if (r.recur === 'quarterly') { dt.setMonth(dt.getMonth() + 3); nextLabel = 'in 3 months'; }
+      if (r.recur === 'halfyearly') { dt.setMonth(dt.getMonth() + 6); nextLabel = 'in 6 months'; }
       nextDt = dt;
     }
     
@@ -1206,8 +1230,8 @@ function updateWeekdayUI() {
 }
 
 function updateRUI() {
-  ['None','Daily','Weekly','Monthly','Custom'].forEach((l,i)=>{
-    const key=['none','daily','weekly','monthly','custom'][i];
+  ['None','Daily','Weekly','Monthly','Quarterly','Halfyearly','Custom'].forEach((l,i)=>{
+    const key=['none','daily','weekly','monthly','quarterly','halfyearly','custom'][i];
     const el = document.getElementById('r'+l);
     if (el) el.className='recur-opt'+(selRecur===key?' sel':'');
   });
