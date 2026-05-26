@@ -56,6 +56,8 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .stat-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px}
 
 .section{padding:0 20px}
+.date-group{margin-bottom:20px}
+.date-header{font-size:13px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;padding:8px 12px;background:rgba(124,106,247,0.08);border-radius:8px;border-left:3px solid var(--accent)}
 .section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
 .section-title{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
 .filter-tabs{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
@@ -276,6 +278,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
         <button class="recur-opt" id="rBimonthly"onclick="setRecur('bimonthly')">Bi-monthly</button>
         <button class="recur-opt" id="rQuarterly"onclick="setRecur('quarterly')">Quarterly</button>
         <button class="recur-opt" id="rHalfyearly"onclick="setRecur('halfyearly')">Half-yearly</button>
+        <button class="recur-opt" id="rYearly"onclick="setRecur('yearly')">Yearly</button>
         <button class="recur-opt" id="rCustom" onclick="setRecur('custom')">Custom</button>
       </div>
       <div class="custom-recur-group" id="customRecurGroup" style="display:none">
@@ -648,7 +651,61 @@ function render() {
     return;
   }
 
-  container.innerHTML = list.map(r => {
+  // Group by date for Task Backlog
+  if (currentType === 'task' && filter === 'backlog') {
+    // Group tasks by date
+    const grouped = {};
+    list.forEach(r => {
+      const dateStr = new Date(r.datetime).toDateString();
+      if (!grouped[dateStr]) grouped[dateStr] = [];
+      grouped[dateStr].push(r);
+    });
+    
+    // Render with date headers
+    container.innerHTML = Object.keys(grouped)
+      .sort((a, b) => new Date(a) - new Date(b))
+      .map(dateStr => {
+        const dateObj = new Date(dateStr);
+        const dateLabel = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+        
+        const tasksHtml = grouped[dateStr].map(r => {
+          const dt = new Date(r.datetime), ms = dt - now;
+          const isOver = !r.done && ms < 0;
+          const pCls = {high:'p-high',med:'p-med',low:'p-low'}[r.priority]||'p-med';
+          const cardCls = r.done?'done':isOver?'overdue':'upcoming';
+          
+          const isTask = (r.type || 'reminder') === 'task';
+          let metaContent = r.note ? `<div class="reminder-date-lbl" style="margin-top:3px;font-size:12px;word-wrap:break-word;white-space:normal">${esc(r.note)}</div>` : '';
+          
+          const isSelected = selectedItems.has(r.id);
+          const bulkClass = bulkMode ? 'bulk-mode' : '';
+          const selectedClass = isSelected ? 'selected' : '';
+          
+          return `<div class="reminder-card ${cardCls} ${bulkClass} ${selectedClass}" ${bulkMode ? `onclick="toggleSelection('${r.id}')"` : ''}>
+            ${r.createTask ? '<div class="task-badge">Task</div>' : ''}
+            <div class="card-content">
+              ${bulkMode ? `<div class="bulk-select-checkbox ${isSelected?'checked':''}"></div>` : `<div class="priority-dot ${pCls}"></div>`}
+              <div class="reminder-info">
+                <div class="reminder-title">${esc(r.title)}</div>
+                ${metaContent}
+              </div>
+            </div>
+            <div class="card-actions">
+              <button class="icon-btn ${r.done?'done-btn':''}" onclick="toggleDone('${r.id}')" title="${r.done?'Undo':'Done'}">${r.done?'↩':'✓'}</button>
+              <button class="icon-btn" onclick="editR('${r.id}')" title="Edit">✎</button>
+              <button class="icon-btn del-btn" onclick="delR('${r.id}')" title="Delete">✕</button>
+            </div>
+          </div>`;
+        }).join('');
+        
+        return `<div class="date-group">
+          <div class="date-header">${dateLabel}</div>
+          ${tasksHtml}
+        </div>`;
+      }).join('');
+  } else {
+    // Regular rendering for other filters
+    container.innerHTML = list.map(r => {
     const dt = new Date(r.datetime), ms = dt - now;
     const isOver = !r.done && ms < 0;
     const pCls = {high:'p-high',med:'p-med',low:'p-low'}[r.priority]||'p-med';
@@ -723,6 +780,7 @@ function render() {
       </div>
     </div>`;
   }).join('');
+  }
   
   // Update bulk count
   document.getElementById('bulkCount').textContent = selectedItems.size;
@@ -874,6 +932,7 @@ async function checkAlerts() {
             if (r.recur === 'bimonthly') dt.setMonth(dt.getMonth() + 2);
             if (r.recur === 'quarterly') dt.setMonth(dt.getMonth() + 3);
             if (r.recur === 'halfyearly') dt.setMonth(dt.getMonth() + 6);
+            if (r.recur === 'yearly') dt.setFullYear(dt.getFullYear() + 1);
             nextDt = dt;
           }
           
@@ -939,6 +998,7 @@ async function checkAlerts() {
             if (r.recur === 'bimonthly') dt.setMonth(dt.getMonth() + 2);
             if (r.recur === 'quarterly') dt.setMonth(dt.getMonth() + 3);
             if (r.recur === 'halfyearly') dt.setMonth(dt.getMonth() + 6);
+            if (r.recur === 'yearly') dt.setFullYear(dt.getFullYear() + 1);
             nextDt = dt;
           }
           
@@ -1089,6 +1149,7 @@ window.toggleDone = async (id) => {
       if (r.recur === 'bimonthly') { dt.setMonth(dt.getMonth() + 2); nextLabel = 'in 2 months'; }
       if (r.recur === 'quarterly') { dt.setMonth(dt.getMonth() + 3); nextLabel = 'in 3 months'; }
       if (r.recur === 'halfyearly') { dt.setMonth(dt.getMonth() + 6); nextLabel = 'in 6 months'; }
+      if (r.recur === 'yearly') { dt.setFullYear(dt.getFullYear() + 1); nextLabel = 'next year'; }
       nextDt = dt;
     }
     
@@ -1234,8 +1295,8 @@ function updateWeekdayUI() {
 }
 
 function updateRUI() {
-  ['None','Daily','Weekly','Monthly','Bimonthly','Quarterly','Halfyearly','Custom'].forEach((l,i)=>{
-    const key=['none','daily','weekly','monthly','bimonthly','quarterly','halfyearly','custom'][i];
+  ['None','Daily','Weekly','Monthly','Bimonthly','Quarterly','Halfyearly','Yearly','Custom'].forEach((l,i)=>{
+    const key=['none','daily','weekly','monthly','bimonthly','quarterly','halfyearly','yearly','custom'][i];
     const el = document.getElementById('r'+l);
     if (el) el.className='recur-opt'+(selRecur===key?' sel':'');
   });
